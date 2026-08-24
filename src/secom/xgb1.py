@@ -3,31 +3,29 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import logging
-from pathlib import Path
 
 from sklearn.utils.class_weight import compute_sample_weight
-from sklearn.model_selection import KFold, StratifiedKFold, RepeatedStratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.metrics import (
     roc_auc_score, 
     brier_score_loss,
-    precision_recall_curve, 
-    auc,
+
     average_precision_score,
 )
 
 import xgboost as xgb
-from xgboost import XGBClassifier, XGBRegressor
+from xgboost import XGBClassifier
 
-from utils import setup_logging
+from secom.paths import DATA_PROCESSED, ARTIFACTS
+from secom.utils import setup_logging
 
 RANDOM_STATE = 1337
 setup_logging()
 
 #%%
 
-dfX = pd.read_parquet('data/processed/dfX_v2.parquet')
-dfy = pd.read_parquet('data/processed/dfy_v1.parquet')
+dfX = pd.read_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
+dfy = pd.read_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
 
 # Sort training data on the 
 df_train = pd.concat([dfX, dfy], axis=1).sort_values('timestamp').reset_index(drop=True)
@@ -176,9 +174,9 @@ print(f'HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  '
       f'rocauc={roc_auc_score(y_hold, p_hold):.4f}  '
       f'brier={brier_score_loss(y_hold, p_hold):.4f}')
 
-Path('artifacts').mkdir(exist_ok=True)
-np.save('artifacts/oof_xgb2.npy', oof)
-res.to_parquet('artifacts/cv_metrics_xgb2.parquet')
+
+np.save(ARTIFACTS / '/oof_xgb2.npy', oof)
+res.to_parquet(ARTIFACTS / '/cv_metrics_xgb2.parquet')
 
 
 # %%

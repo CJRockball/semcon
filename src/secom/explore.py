@@ -4,18 +4,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+from secom.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS
+from secom.utils import setup_logging
+
+setup_logging()
+
 #%%
 
-data_dir = Path('data/raw')
-
-dfX = pd.read_csv(data_dir / 'secom.data',
+dfX = pd.read_csv(DATA_RAW / 'secom.data',
                   sep=r"\s+",
                   header=None,
                   na_values=['NaN'],
                   dtype="float64",
                   )
 
-dfy = pd.read_csv(data_dir / 'secom_labels.data',
+dfy = pd.read_csv(DATA_RAW / 'secom_labels.data',
                   sep=r'\s+',
                   header=None,
                   names=['target', 'timestamp']
@@ -33,8 +36,8 @@ dfy['target'] = dfy['target'].eq(1).astype('int8')
 assert len(dfX) == len(dfy) == 1567
 assert dfX.shape[1] == 590
 
-#dfX.to_parquet('data/raw/dfX_raw.parquet')
-#dfy.to_parquet('data/raw/dfy_raw.parquet')
+dfX.to_parquet(DATA_PROCESSED / 'dfX_raw.parquet')
+dfy.to_parquet(DATA_PROCESSED / 'dfy_raw.parquet')
 
 # %% Remove constant
 
@@ -92,9 +95,9 @@ for col in dfX.columns:
 
 diag = pd.DataFrame(rows).set_index('feature')
 display(diag)
-diag.to_parquet('artifacts/diagnostic.parquet')
+diag.to_parquet(ARTIFACTS / 'diagnostic.parquet')
 
-df_check = pd.read_parquet('artifacts/diagnostic.parquet')
+df_check = pd.read_parquet(ARTIFACTS / 'diagnostic.parquet')
 display(df_check)
 
 # %% classify
@@ -147,11 +150,11 @@ dfX = dfX.drop(columns=list(to_drop))
 # %% Save cleaned data
 
 print(dfX.shape)
-dfX.to_parquet('data/processed/dfX_v1.parquet')
+dfX.to_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
 print(dfy.shape)
-dfy.to_parquet('data/processed/dfy_v1.parquet')
+dfy.to_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
 
-df_check = pd.read_parquet('data/processed/dfX_v1.parquet')
+df_check = pd.read_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
 
 display(df_check)
 print(df_check.shape)

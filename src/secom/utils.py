@@ -4,6 +4,7 @@ import logging
 import sys
 from pathlib import Path
 import pandas as pd
+from secom.paths import LOGS
 
 def setup_logging(level: int = logging.INFO, log_file: str = "eda.log") -> logging.Logger:
     """Same logger as the EDA notebook; appends to the shared log file."""

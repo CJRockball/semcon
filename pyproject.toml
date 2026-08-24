@@ -7,7 +7,7 @@ name = "semcon"
 version = "0.1.0"
 description = "Wafer pass/fail yield prediction from inline sensor data (SECOM): leakage-free cross-validation, missingness-as-signal features, and drift-quantified evaluation"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Patrick Carlberg" }]
 keywords = [
@@ -24,6 +24,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
@@ -34,21 +35,22 @@ dependencies = [
     "numpy>=1.26",
     "pandas>=2.2",
     "pyarrow>=15.0",        # parquet I/O in explore.py / xgb scripts
-    "scikit-learn>=1.4",    # RepeatedStratifiedKFold, metrics, mutual_info
-    "xgboost>=2.1",         # 2.x callback API (EarlyStopping save_best)
+    "scikit-learn>=1.4,<2.0",    # RepeatedStratifiedKFold, metrics, mutual_info
+    "xgboost==2.1.1",         # 2.x callback API (EarlyStopping save_best)
     "scipy>=1.11",          # spearmanr, connected_components, stats
     "matplotlib>=3.8",
     "seaborn>=0.13",        # EDA notebook
 ]
 
+# Extras = optional RUNTIME features, published in package metadata.
+# Install: uv pip install -e ".[notebooks,explain]"
 [project.optional-dependencies]
-# Jupyter only for the notebooks; keep the core package lean.
 notebooks = [
     "jupyterlab>=4.0",
     "ipykernel>=6.27",
 ]
-# Next analysis steps (roadmap): drift forecasting and the fab-scheduling toy.
-# Declared now so the roadmap is visible in the package metadata.
+# Roadmap extras: declared now so the plan is visible in the metadata;
+# promote to core when the corresponding module joins the main pipeline.
 timeseries = [
     "statsmodels>=0.14",    # SARIMAX tool-drift / fail-rate forecasting
 ]
@@ -56,10 +58,17 @@ optimization = [
     "simpy>=4.1",           # discrete-event simulation of a tool cluster
     "pulp>=2.8",            # MIP scheduling
 ]
+explain = [
+    "shap>=0.45",           # TreeSHAP model/feature evaluation (post-baseline)
+]
+
+# Dependency groups = DEVELOPER-only tooling, never published (PEP 735).
+# Install: uv pip install --group dev   (or: uv pip install -e . --group dev)
+[dependency-groups]
 dev = [
     "pytest>=8.0",
     "ruff>=0.5",
-    "ipykernel>=6.27",
+    "mypy>=1.10",
 ]
 
 [project.urls]
@@ -71,7 +80,7 @@ Repository = "https://github.com/CJRockball/semcon"
 packages = ["src/semcon"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py310"
 line-length = 100
 src = ["src"]
 
@@ -82,3 +91,7 @@ ignore = ["E501"]  # line length handled by the formatter
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true   # xgboost/shap ship incomplete stubs

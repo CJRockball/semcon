@@ -5,12 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from utils import setup_logging
+from secom.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS
+from secom.utils import setup_logging
 
 log = setup_logging()
 
-RAW_DIR  = Path('data/raw')
-PROC_DIR = Path('data/processed')
 
 CLIQUE_14 = [72, 73, 345, 346]      # OR 0.49, p=0.0008
 CLIQUE_23 = [112, 247, 385, 519]    # OR 0.53, p=0.0031
@@ -46,11 +45,11 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame) -> pd.DataFra
 
 
 if __name__ == '__main__':
-    df_values = pd.read_parquet(PROC_DIR / 'dfX_v1.parquet')
-    dfX_raw   = pd.read_parquet(RAW_DIR / 'dfX_raw.parquet')
+    df_values = pd.read_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
+    dfX_raw   = pd.read_parquet(DATA_PROCESSED / 'dfX_raw.parquet')
 
     df_model = build_features(df_values, dfX_raw)
-    df_model.to_parquet(PROC_DIR / 'dfX_v2.parquet')
+    df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
     log.info(f"Saved dfX_v2.parquet {df_model.shape}")
 
 
