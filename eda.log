@@ -1,0 +1,57 @@
+2026-08-20 12:16:49 | INFO    | secom | Logging initialised
+2026-08-20 12:46:42 | INFO    | secom | [eda.py] Loaded features: dfX_v1.parquet (1567, 257), target: dfy_v1.parquet (1567, 2)
+2026-08-20 13:14:19 | INFO    | secom | Features with class missing-gap > 5pp: 8
+2026-08-20 13:41:48 | INFO    | secom | Logging initialised
+2026-08-20 13:41:52 | INFO    | secom | [eda.py] Loaded features: dfX_v1.parquet (1567, 257), target: dfy_v1.parquet (1567, 2)
+2026-08-20 13:42:18 | INFO    | secom | Features with class missing-gap > 5pp: 8
+2026-08-20 14:12:29 | INFO    | secom | Co-missingness: 27 dropout groups across 233 NaN-containing features
+2026-08-20 20:01:04 | INFO    | secom | 29 dropout cliques saved, 232 features involved
+2026-08-20 20:30:57 | INFO    | secom | [eda.py] Loaded features: dfX_raw.parquet (1567, 590), target: dfy_raw.parquet (1567, 2)
+2026-08-20 20:31:30 | INFO    | secom | Features with class missing-gap > 5pp: 28
+2026-08-20 20:32:22 | INFO    | secom | 35 dropout cliques saved, 538 features involved
+2026-08-21 09:12:33 | INFO    | secom | Logging initialised
+2026-08-21 09:12:34 | INFO    | secom | [eda.py] Loaded features: dfX_raw.parquet (1567, 590), target: dfy_raw.parquet (1567, 2)
+2026-08-21 09:12:47 | INFO    | secom | Features with class missing-gap > 5pp: 28
+2026-08-21 09:13:13 | INFO    | secom | 35 dropout cliques saved, 538 features involved
+2026-08-21 09:49:11 | INFO    | secom | 35 dropout cliques saved, 538 features involved
+2026-08-21 09:59:31 | INFO    | secom | Tail check: fail rate tail=0.056 rest=0.068
+2026-08-21 10:07:57 | INFO    | secom | Tail check: fail rate tail=0.000 rest=0.068
+2026-08-21 10:24:01 | INFO    | secom | Features with class missing-gap > 5pp: 28
+2026-08-21 10:33:12 | INFO    | secom | Logging initialised
+2026-08-21 10:33:12 | INFO    | secom | [eda.py] Loaded features: dfX_raw.parquet (1567, 590), target: dfy_raw.parquet (1567, 2)
+2026-08-21 10:33:12 | INFO    | secom | Features with class missing-gap > 5pp: 28
+2026-08-21 10:33:14 | INFO    | secom | 35 dropout cliques saved, 538 features involved
+2026-08-21 10:36:41 | INFO    | secom | Tail check: fail rate tail=0.000 rest=0.068
+2026-08-21 10:38:31 | INFO    | secom | Logging initialised
+2026-08-21 10:38:33 | INFO    | secom | [eda.py] Loaded features: dfX_raw.parquet (1567, 590), target: dfy_raw.parquet (1567, 2)
+2026-08-21 10:38:46 | INFO    | secom | Features with class missing-gap > 5pp: 28
+2026-08-21 10:38:50 | INFO    | secom | 35 dropout cliques saved, 538 features involved
+2026-08-21 10:39:09 | INFO    | secom | Tail check: fail rate tail=0.000 rest=0.068
+2026-08-21 14:18:58 | INFO    | secom | [eda.py] Loaded features: dfX_v1.parquet (1567, 257), target: dfy_v1.parquet (1567, 2)
+2026-08-21 14:52:38 | INFO    | secom | Shape triage: 59/257 features pass all flags; 158 transformation candidates
+2026-08-21 15:05:30 | INFO    | secom | Shape triage: 59/257 features pass all flags; 158 transformation candidates
+2026-08-21 15:06:04 | INFO    | secom | Shape triage: 59/257 features pass all flags; 158 transformation candidates
+2026-08-21 15:09:27 | INFO    | secom | Separation ranking: 257 features, 17 pass FDR q<0.05, 23 with |g| > 0.3
+2026-08-21 15:44:00 | INFO    | secom | Variance shift (clipped, 3x): 9 features; 26 raw ratios were outlier inflation
+2026-08-21 15:44:26 | INFO    | secom | MI vs |g| Spearman rho: 0.01
+2026-08-21 16:00:44 | INFO    | secom | Dropping columns duplicated by the 4.3 join: ['missing_rate', 'f_outlier_dom', 'f_skew_outlier_driven']
+2026-08-21 16:00:44 | INFO    | secom | Master feature table saved: (257, 43) -> eda_diagnostics_v1.parquet
+2026-08-21 16:39:12 | INFO    | secom | Tail check on 121 outlier-dominated features: 29 with >2x fail enrichment
+2026-08-21 16:40:40 | INFO    | secom | Logging initialised
+2026-08-21 16:40:40 | INFO    | secom | [eda.py] Loaded features: dfX_raw.parquet (1567, 590), target: dfy_raw.parquet (1567, 2)
+2026-08-21 16:40:41 | INFO    | secom | Features with class missing-gap > 5pp: 28
+2026-08-21 16:40:42 | INFO    | secom | 35 dropout cliques saved, 538 features involved
+2026-08-21 16:40:45 | INFO    | secom | Tail check: fail rate tail=0.000 rest=0.068
+2026-08-21 16:40:45 | INFO    | secom | [eda.py] Loaded features: dfX_v1.parquet (1567, 257), target: dfy_v1.parquet (1567, 2)
+2026-08-21 16:40:45 | INFO    | secom | Shape triage: 59/257 features pass all flags; 158 transformation candidates
+2026-08-21 16:40:46 | INFO    | secom | Separation ranking: 257 features, 17 pass FDR q<0.05, 23 with |g| > 0.3
+2026-08-21 16:40:50 | INFO    | secom | Tail check on 121 outlier-dominated features: 29 with >2x fail enrichment
+2026-08-21 16:40:51 | INFO    | secom | Variance shift (clipped, 3x): 9 features; 26 raw ratios were outlier inflation
+2026-08-21 16:40:54 | INFO    | secom | MI vs |g| Spearman rho: 0.01
+2026-08-21 16:40:54 | INFO    | secom | Dropping columns duplicated by the 4.3 join: ['missing_rate', 'f_outlier_dom', 'f_skew_outlier_driven']
+2026-08-21 16:40:54 | INFO    | secom | Master feature table saved: (257, 44) -> eda_diagnostics_v1.parquet
+2026-08-21 16:48:31 | INFO    | secom | MI vs |g| Spearman rho: 0.14
+2026-08-21 16:48:55 | INFO    | secom | Master feature table saved: (257, 44) -> eda_diagnostics_v1.parquet
+2026-08-21 17:28:30 | INFO    | secom | MI vs |g| Spearman rho: 0.14
+2026-08-21 22:33:19 | INFO    | secom | Feature build: 257 values + 4 engineered = 261 cols | clq14=794, clq23=715, block5=1095
+2026-08-21 22:33:19 | INFO    | secom | Saved dfX_v2.parquet (1567, 261)
