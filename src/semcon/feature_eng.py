@@ -41,7 +41,8 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame) -> pd.DataFra
     out = pd.concat([df_values, feats], axis=1)
     logger.info(f"Feature build: {df_values.shape[1]} values + {feats.shape[1]} engineered "
              f"= {out.shape[1]} cols | clq14={feats['miss_clq14'].sum()}, "
-             f"clq23={feats['miss_clq23'].sum()}, block5={feats['miss_block5'].sum()}")
+             f"clq23={feats['miss_clq23'].sum()}, block5={feats['miss_block5'].sum()}, "
+             f"row_missing_rate={feats['row_missing_rate'].sum():.1f}")
     return out
 
 
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     df_model = build_features(df_values, dfX_raw)
     df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
     logger.info(f"Saved dfX_v2.parquet {df_model.shape}")
-
+    print(df_model.shape)
 
 
 # %%
