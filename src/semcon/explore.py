@@ -4,10 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from secom.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS
-from secom.utils import setup_logging
+from semcon.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS, LOGS
+from semcon.utils import setup_logging
 
-setup_logging()
+logger = setup_logging(logfile=LOGS / "ml.log")
+logger.info('[explore.py] Start data pipeline')
 
 #%%
 
@@ -32,9 +33,9 @@ dfy['timestamp'] = pd.to_datetime(
 
 dfy['target'] = dfy['target'].eq(1).astype('int8')
 
-
 assert len(dfX) == len(dfy) == 1567
 assert dfX.shape[1] == 590
+
 
 dfX.to_parquet(DATA_PROCESSED / 'dfX_raw.parquet')
 dfy.to_parquet(DATA_PROCESSED / 'dfy_raw.parquet')

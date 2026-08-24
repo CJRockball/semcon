@@ -16,11 +16,12 @@ from sklearn.metrics import (
 import xgboost as xgb
 from xgboost import XGBClassifier
 
-from secom.paths import DATA_PROCESSED, ARTIFACTS
-from secom.utils import setup_logging
+from semcon.paths import DATA_PROCESSED, ARTIFACTS, LOGS
+from semcon.utils import setup_logging
 
 RANDOM_STATE = 1337
-setup_logging()
+logger = setup_logging(logfile=LOGS / "ml.log")
+logger.info('[train_xgb.py] Start training pipeline')
 
 #%%
 

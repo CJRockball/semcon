@@ -5,10 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from secom.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS
-from secom.utils import setup_logging
+from semcon.paths import DATA_PROCESSED, LOGS
+from semcon.utils import setup_logging
 
-log = setup_logging()
+logger = setup_logging(logfile=LOGS / "ml.log")
+logger.info('[feature_eng.py] Start feature engineering pipeline')
 
 
 CLIQUE_14 = [72, 73, 345, 346]      # OR 0.49, p=0.0008
@@ -38,7 +39,7 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame) -> pd.DataFra
     assert feats['miss_clq23'].sum() == 715
 
     out = pd.concat([df_values, feats], axis=1)
-    log.info(f"Feature build: {df_values.shape[1]} values + {feats.shape[1]} engineered "
+    logger.info(f"Feature build: {df_values.shape[1]} values + {feats.shape[1]} engineered "
              f"= {out.shape[1]} cols | clq14={feats['miss_clq14'].sum()}, "
              f"clq23={feats['miss_clq23'].sum()}, block5={feats['miss_block5'].sum()}")
     return out
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 
     df_model = build_features(df_values, dfX_raw)
     df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
-    log.info(f"Saved dfX_v2.parquet {df_model.shape}")
+    logger.info(f"Saved dfX_v2.parquet {df_model.shape}")
 
 
 
