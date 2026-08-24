@@ -44,8 +44,6 @@ data/processed/*
 !data/processed/.gitignore
 artifacts/*
 !artifacts/.gitignore
-submissions/*
-!submissions/.gitignore
 logs/*
 !logs/.gitignore
 
