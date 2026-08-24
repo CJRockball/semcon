@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "semcon"
+version = "0.1.0"
+description = "Wafer pass/fail yield prediction from inline sensor data (SECOM): leakage-free cross-validation, missingness-as-signal features, and drift-quantified evaluation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Patrick Carlberg" }]
+keywords = [
+    "semiconductor",
+    "yield-optimization",
+    "secom",
+    "xgboost",
+    "machine-learning",
+    "spc",
+    "smart-manufacturing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+# Only what the code actually imports. Add a dependency when a module
+# needs it, not before.
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pyarrow>=15.0",        # parquet I/O in explore.py / xgb scripts
+    "scikit-learn>=1.4",    # RepeatedStratifiedKFold, metrics, mutual_info
+    "xgboost>=2.1",         # 2.x callback API (EarlyStopping save_best)
+    "scipy>=1.11",          # spearmanr, connected_components, stats
+    "matplotlib>=3.8",
+    "seaborn>=0.13",        # EDA notebook
+]
+
+[project.optional-dependencies]
+# Jupyter only for the notebooks; keep the core package lean.
+notebooks = [
+    "jupyterlab>=4.0",
+    "ipykernel>=6.27",
+]
+# Next analysis steps (roadmap): drift forecasting and the fab-scheduling toy.
+# Declared now so the roadmap is visible in the package metadata.
+timeseries = [
+    "statsmodels>=0.14",    # SARIMAX tool-drift / fail-rate forecasting
+]
+optimization = [
+    "simpy>=4.1",           # discrete-event simulation of a tool cluster
+    "pulp>=2.8",            # MIP scheduling
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+    "ipykernel>=6.27",
+]
+
+[project.urls]
+Repository = "https://github.com/CJRockball/semcon"
+
+# Proper src layout: modules live in src/semcon/, so the installed
+# package is `semcon` (not `src`).
+[tool.hatch.build.targets.wheel]
+packages = ["src/semcon"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "SIM"]
+ignore = ["E501"]  # line length handled by the formatter
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
