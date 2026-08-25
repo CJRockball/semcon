@@ -1,11 +1,9 @@
 #%%
-
+import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import argparse
 
-from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.metrics import (
     roc_auc_score, 
@@ -36,10 +34,9 @@ def parse_args(argv=None):
     p.add_argument('--no-selection', action='store_false', dest='use_selection',
                    help='all-feature baseline instead of fold-internal selection')
     p.add_argument('--repeats', type=int, default=3)
-    p.add_argument('--g-min', type=float, default=0.25)
     return p.parse_args(argv)
 
-def load_data():
+def load_data(test_split:int, time_split:int):
     dfX = pd.read_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
     dfy = pd.read_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
 
@@ -47,10 +44,10 @@ def load_data():
     df_train = pd.concat([dfX, dfy], axis=1).sort_values('timestamp').reset_index(drop=True)
 
     # Drop last 27, from eda, different regime 
-    df_train = df_train.iloc[:-27, :]
+    df_train = df_train.iloc[:-time_split, :]
     # Use the last 15% (231 rows) as test data
-    df_test = df_train.iloc[-231:,:]
-    df_train = df_train.iloc[:-231, :]
+    df_test = df_train.iloc[-test_split:,:]
+    df_train = df_train.iloc[:-test_split, :]
 
     target = 'target'
     return df_train, df_test, target
@@ -59,7 +56,7 @@ def load_data():
 #%%
 
 def run_cv(df_train:pd.DataFrame, target:str, 
-           kfolds:int, repeats:int, use_selection:bool) \
+           kfolds:int, repeats:int, use_selection:bool, logger) \
         -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
     
     df_y = df_train[target].copy()
@@ -96,7 +93,7 @@ def run_cv(df_train:pd.DataFrame, target:str,
         model = XGBClassifier(
             objective='binary:logistic',
             eval_metric=['logloss', 'aucpr'], # Last one for early-stopping
-            scale_pos_weight=float((df_y == 0).sum() / (df_y == 1).sum()),
+            scale_pos_weight=float((ytrain == 0).sum() / (ytrain == 1).sum()),
             callbacks=[es],
             n_estimators=5000,
             
@@ -114,7 +111,6 @@ def run_cv(df_train:pd.DataFrame, target:str,
                 )
         
         ypred_proba = model.predict_proba(Xvalid)
-        y_pred = model.predict(Xvalid)
         oof[i // kfolds, valid_index] = ypred_proba[:,1]
         
         fold_metrics.append({
@@ -127,14 +123,14 @@ def run_cv(df_train:pd.DataFrame, target:str,
         }) 
 
     res = pd.DataFrame(fold_metrics)
-    print(res.groupby('repeat')[['aucpr', 'rocauc', 'brier']].mean().round(4))
-    print(res[['aucpr', 'rocauc', 'brier']].agg(['mean', 'std']).round(4))
+    logger.info(res.groupby('repeat')[['aucpr', 'rocauc', 'brier']].mean().round(4))
+    logger.info(res[['aucpr', 'rocauc', 'brier']].agg(['mean', 'std']).round(4))
     return res, oof, sel_count
 
 #%% Selection stability across the 15 fits
 def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
                 res:pd.DataFrame, sel_count:pd.Series, 
-                kfolds:int, repeats:int, use_selection:bool):
+                kfolds:int, repeats:int, use_selection:bool, logger):
 
     if use_selection:
         stability = (sel_count / (kfolds * repeats)).sort_values(ascending=False)
@@ -164,7 +160,7 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
     final.fit(df_X[feats], df_y)
 
     p_hold = final.predict_proba(X_hold[feats])[:, 1]
-    print(f'HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  '
+    logger.info(f'HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  '
         f'rocauc={roc_auc_score(y_hold, p_hold):.4f}  '
         f'brier={brier_score_loss(y_hold, p_hold):.4f}')
 
@@ -172,23 +168,30 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
     res.to_parquet(ARTIFACTS / 'cv_metrics_xgb2.parquet')
     return final, feats, p_hold
 
-def evaluate(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray, p_hold:np.ndarray):
+def evaluate(
+    df_train:pd.DataFrame, 
+    df_test:pd.DataFrame, 
+    oof:np.ndarray, 
+    p_hold:np.ndarray, 
+    logger):
+    
     df_y = df_train['target'].copy()
     y_hold = df_test['target'].copy()
 
     oof_mean = oof.mean(axis=0)                       # average the 3 repeats
     thr = tune_threshold(df_y, oof_mean, criterion='mcc')
-    print(classification_summary(df_y, oof_mean, thr))      # in-regime, honest
-    print(classification_summary(y_hold, p_hold, thr))      # same threshold, drift regime
+    logger.info(classification_summary(df_y, oof_mean, thr))      # in-regime, honest
+    logger.info(classification_summary(y_hold, p_hold, thr))      # same threshold, drift regime
     save_pr_curve(y_hold, p_hold, ARTIFACTS / 'pr_curve_holdout.png')
     save_confusion_heatmap(y_hold, p_hold, thr, 
                            ARTIFACTS / 'conf_heatmap.png', 
                            )
-    r_value = recall_at_flagrate(y_hold, p_hold, q=64/1309)
-    print(f'recall_at_flagrate: {r_value}')
+    oof_length = oof_mean.shape[0]
+    r_value = recall_at_flagrate(y_hold, p_hold, q=64/oof_length)
+    logger.info(f'recall_at_flagrate: {r_value}')
     
-    print(pd.Series(p_hold).describe())
-    print(pd.Series(oof_mean).describe())
+    logger.info(pd.Series(p_hold).describe())
+    logger.info(pd.Series(oof_mean).describe())
     
     return
 
@@ -196,25 +199,29 @@ def evaluate(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray, p_hold
 #%% 
 
 def main(argv=None):         # argv param => testable
+    if argv is None:
+        argv = [] if "ipykernel" in sys.modules else sys.argv[1:]
     args = parse_args(argv)
+    
     logger = setup_logging(logfile=LOGS / "ml.log")
-
     logger.info(f'[train_xgb] start | selection={args.use_selection} '
-                f'repeats={args.repeats} g_min={args.g_min}')
+                f'repeats={args.repeats}')
 
     KFOLDS = 5
-
-    df_train, df_test, target = load_data()
+    TEST_SPLIT = 231 # Chose 15% of the data
+    TIME_SPLIT = 27 # From EDA different regime
+    
+    df_train, df_test, target = load_data(TEST_SPLIT, TIME_SPLIT)
     res, oof, sel_count = run_cv(df_train, target, kfolds=KFOLDS,
                                  repeats=args.repeats,
-                                 use_selection=args.use_selection,)
-                                # g_min=args.g_min)
+                                 use_selection=args.use_selection, logger=logger,)
+    
     final, feats, p_hold = refit_final(df_train, df_test, oof, res, sel_count, 
                                 kfolds=KFOLDS,
                                 repeats=args.repeats,
-                                use_selection=args.use_selection,)
-                               # g_min=args.g_min)
-    evaluate(df_train, df_test, oof, p_hold)
+                                use_selection=args.use_selection,logger=logger,)
+
+    evaluate(df_train, df_test, oof, p_hold, logger)
 
     X_train = df_train.drop(columns=["timestamp", "target"])
 
@@ -231,7 +238,7 @@ def main(argv=None):         # argv param => testable
 
 
 if __name__ == "__main__":
-    main([])
+    main()
     #main(["--no-selection", "--repeats", "3"])
 
 # %%

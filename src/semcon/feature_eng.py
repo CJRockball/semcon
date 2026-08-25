@@ -13,7 +13,7 @@ from semcon.utils import setup_logging
                  # partial 5th block: columns 542..589
 
 def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame,
-                   clique1:list[int], clique2:list[int], block:int) -> pd.DataFrame:
+                   clique1:list[int], clique2:list[int], block:int, logger) -> pd.DataFrame:
     """Add missingness/data-quality features to the preprocessed value frame."""
     feats = pd.DataFrame(index=df_values.index)
 
@@ -36,7 +36,7 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame,
     logger.info(f"Feature build: {df_values.shape[1]} values + {feats.shape[1]} engineered "
              f"= {out.shape[1]} cols | clq14={feats['miss_clq14'].sum()}, "
              f"clq23={feats['miss_clq23'].sum()}, block5={feats['miss_block5'].sum()}, "
-             f"row_missing_rate")
+             "row_missing_rate")
     return out
 
 
@@ -52,10 +52,10 @@ def main():
     df_values = pd.read_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
     dfX_raw   = pd.read_parquet(DATA_PROCESSED / 'dfX_raw.parquet')
 
-    df_model = build_features(df_values, dfX_raw, clique1, clique2, block)
+    df_model = build_features(df_values, dfX_raw, clique1, clique2, block, logger)
     df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
     logger.info(f"Saved dfX_v2.parquet {df_model.shape}")
-    print(df_model.shape)
+
     
 
 

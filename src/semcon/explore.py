@@ -96,11 +96,10 @@ def drop_basic(dfX, dfy):
         })
 
     diag = pd.DataFrame(rows).set_index('feature')
-    display(diag)
     diag.to_parquet(ARTIFACTS / 'diagnostic.parquet')
 
     df_check = pd.read_parquet(ARTIFACTS / 'diagnostic.parquet')
-    display(df_check)
+
 
     flagged = diag[
         (diag['dom_frac'] > DOMINANT_FRAC) |
@@ -117,7 +116,6 @@ def drop_basic(dfX, dfy):
     drop = flagged.index.difference(keep.index)
 
     print(f"flagged near-constant: {len(flagged)}, keep (enriched): {len(keep)}, drop: {len(drop)}")
-    display(keep.sort_values('enrichment', ascending=False))
 
     dfX = dfX.drop(columns=drop)
     print(f'Total remaining features: {dfX.shape[1]}')
