@@ -42,7 +42,7 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame) -> pd.DataFra
     logger.info(f"Feature build: {df_values.shape[1]} values + {feats.shape[1]} engineered "
              f"= {out.shape[1]} cols | clq14={feats['miss_clq14'].sum()}, "
              f"clq23={feats['miss_clq23'].sum()}, block5={feats['miss_block5'].sum()}, "
-             f"row_missing_rate={feats['row_missing_rate'].sum():.1f}")
+             f"row_missing_rate")
     return out
 
 

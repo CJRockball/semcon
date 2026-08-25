@@ -79,6 +79,11 @@ Repository = "https://github.com/CJRockball/semcon"
 [tool.hatch.build.targets.wheel]
 packages = ["src/semcon"]
 
+[project.scripts]
+semcon-explore = "semcon.explore:main"
+semcon-features = "semcon.feature_eng:main"
+semcon-train = "semcon.train_xgb:main"
+
 [tool.ruff]
 target-version = "py310"
 line-length = 100
