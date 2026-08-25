@@ -180,18 +180,27 @@ def evaluate(
 
     oof_mean = oof.mean(axis=0)                       # average the 3 repeats
     thr = tune_threshold(df_y, oof_mean, criterion='mcc')
-    logger.info(classification_summary(df_y, oof_mean, thr))      # in-regime, honest
-    logger.info(classification_summary(y_hold, p_hold, thr))      # same threshold, drift regime
+    summary_oof = classification_summary(df_y, oof_mean, thr)
+    summary_oof.to_csv(ARTIFACTS / 'summary_oof.csv')
+    summary_hold = classification_summary(y_hold, p_hold, thr)
+    summary_hold.to_csv(ARTIFACTS / 'summary_hold.csv')
+    logger.info(summary_oof)      # in-regime, honest
+    logger.info(summary_hold)      # same threshold, drift regime
     save_pr_curve(y_hold, p_hold, ARTIFACTS / 'pr_curve_holdout.png')
     save_confusion_heatmap(y_hold, p_hold, thr, 
                            ARTIFACTS / 'conf_heatmap.png', 
                            )
-    oof_length = oof_mean.shape[0]
-    r_value = recall_at_flagrate(y_hold, p_hold, q=64/oof_length)
+    
+    q = float(summary_oof[['tp', 'fp']].sum() / len(df_y)) 
+    r_value = recall_at_flagrate(y_hold, p_hold, q=q)
     logger.info(f'recall_at_flagrate: {r_value}')
     
-    logger.info(pd.Series(p_hold).describe())
-    logger.info(pd.Series(oof_mean).describe())
+    pred_hold_stats = pd.Series(p_hold).describe()
+    pred_hold_stats.to_csv(ARTIFACTS / 'pred_hold_stats.csv')
+    logger.info(pred_hold_stats)
+    oof_mean_stats = pd.Series(oof_mean).describe()
+    oof_mean_stats.to_csv(ARTIFACTS / 'oof_mean_stats.csv')
+    logger.info(oof_mean_stats)
     
     return
 
@@ -223,11 +232,11 @@ def main(argv=None):         # argv param => testable
 
     evaluate(df_train, df_test, oof, p_hold, logger)
 
-    X_train = df_train.drop(columns=["timestamp", "target"])
+    df_X = df_train.drop(columns=["timestamp", "target"])
 
     shap_summary = save_shap_plots(
         model=final,
-        X=X_train[feats],
+        X=df_X[feats],
         output_dir=ARTIFACTS / "shap",
     )
 
