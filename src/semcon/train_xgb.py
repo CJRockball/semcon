@@ -3,6 +3,7 @@ import sys
 import pandas as pd
 import numpy as np
 import argparse
+import logging
 
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.metrics import (
@@ -18,27 +19,50 @@ from semcon.paths import DATA_PROCESSED, ARTIFACTS, LOGS
 from semcon.utils import setup_logging
 from semcon.selection import select_features
 from semcon.explain import save_shap_plots
+from semcon.config import parse_overrides, load_config
 from semcon.evaluation import (tune_threshold, 
                                classification_summary, 
                                save_pr_curve, 
                                save_confusion_heatmap,
+                               operating_points,
                                recall_at_flagrate
 )
+from semcon.tracking import (
+    make_run,
+    save_splits,
+    append_index,
+)
 
-RANDOM_STATE = 1337
+logger = logging.getLogger("semcon")
+
 
 #%%
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description='SECOM XGBoost training')
+    # Experiment arguments
+    p.add_argument('--run-name', type=str, default=None,
+               help='experiment slug for the run folder, e.g. baseline')
+    p.add_argument('--note', type=str, default='',
+               help='free-text note stored in config.json and the runs index')
+    # Data feature
     p.add_argument('--no-selection', action='store_false', dest='use_selection',
                    help='all-feature baseline instead of fold-internal selection')
+    # CV feature
     p.add_argument('--repeats', type=int, default=3)
+    # XGB Model features
+    p.add_argument('--set', action='append', default=[], metavar='KEY=VALUE',
+               dest='overrides',
+               help='override a model param, repeatable: --set max_depth=5')
     return p.parse_args(argv)
 
+
 def load_data(test_split:int, time_split:int):
-    dfX = pd.read_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
-    dfy = pd.read_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
+    X_PATH = DATA_PROCESSED / 'dfX_v2.parquet'
+    Y_PATH = DATA_PROCESSED / 'dfy_v1.parquet'
+    dfX = pd.read_parquet(X_PATH)
+    dfy = pd.read_parquet(Y_PATH)
+    data_info = json.loads(X_PATH.with_suffix('.dataset.json').read_text())
 
     # Sort training data on the 
     df_train = pd.concat([dfX, dfy], axis=1).sort_values('timestamp').reset_index(drop=True)
@@ -50,20 +74,20 @@ def load_data(test_split:int, time_split:int):
     df_train = df_train.iloc[:-test_split, :]
 
     target = 'target'
-    return df_train, df_test, target
+    return df_train, df_test, target, data_info
     
     
 #%%
 
-def run_cv(df_train:pd.DataFrame, target:str, 
-           kfolds:int, repeats:int, use_selection:bool, logger) \
+def run_cv(df_train:pd.DataFrame, target:str, xgb_param, random:int,
+           kfolds:int, repeats:int, use_selection:bool) \
         -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
     
     df_y = df_train[target].copy()
     df_X = df_train.drop(columns=['timestamp', 'target']).copy(deep=True)
 
     rskf = RepeatedStratifiedKFold(n_splits=kfolds, n_repeats=repeats,
-                                random_state=RANDOM_STATE)
+                                random_state=random)
 
     oof = np.zeros((repeats, len(df_X)))   # one OOF vector per repeat
     fold_metrics = []
@@ -91,17 +115,10 @@ def run_cv(df_train:pd.DataFrame, target:str,
 
       
         model = XGBClassifier(
-            objective='binary:logistic',
+            **xgb_param,
             eval_metric=['logloss', 'aucpr'], # Last one for early-stopping
             scale_pos_weight=float((ytrain == 0).sum() / (ytrain == 1).sum()),
-            callbacks=[es],
-            n_estimators=5000,
-            
-            learning_rate=0.03,
-            max_depth=4,
-            max_bin=511,
-            reg_alpha=3,
-            reg_lambda=2,
+            callbacks=[es],            
             device = 'cuda',
         )
         
@@ -129,8 +146,8 @@ def run_cv(df_train:pd.DataFrame, target:str,
 
 #%% Selection stability across the 15 fits
 def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
-                res:pd.DataFrame, sel_count:pd.Series, 
-                kfolds:int, repeats:int, use_selection:bool, logger):
+                res:pd.DataFrame, xgb_params, sel_count:pd.Series, 
+                kfolds:int, repeats:int, use_selection:bool, random:int):
 
     if use_selection:
         stability = (sel_count / (kfolds * repeats)).sort_values(ascending=False)
@@ -149,13 +166,9 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
     best_iter = int(np.median(res['best_iter']))
 
     final = XGBClassifier(
-        objective='binary:logistic',
-        eval_metric='aucpr',
-        n_estimators=best_iter,
-        learning_rate=0.03, max_depth=4, max_bin=511,
-        reg_alpha=3, reg_lambda=2,
+        **xgb_params,
         scale_pos_weight=float((df_y == 0).sum() / (df_y == 1).sum()),
-        device='cuda', random_state=RANDOM_STATE,
+        device='cuda', random_state=random,
     )
     final.fit(df_X[feats], df_y)
 
@@ -173,7 +186,7 @@ def evaluate(
     df_test:pd.DataFrame, 
     oof:np.ndarray, 
     p_hold:np.ndarray, 
-    logger):
+    ):
     
     df_y = df_train['target'].copy()
     y_hold = df_test['target'].copy()
@@ -202,6 +215,9 @@ def evaluate(
     oof_mean_stats.to_csv(ARTIFACTS / 'oof_mean_stats.csv')
     logger.info(oof_mean_stats)
     
+    pr_tradeoff_hold = operating_points(y_hold, p_hold)
+    pr_tradeoff_hold.to_csv(ARTIFACTS / 'pr_tradeoff_hold.csv')
+    logger.info(pr_tradeoff_hold)
     return
 
 
@@ -215,22 +231,37 @@ def main(argv=None):         # argv param => testable
     logger = setup_logging(logfile=LOGS / "ml.log")
     logger.info(f'[train_xgb] start | selection={args.use_selection} '
                 f'repeats={args.repeats}')
-
-    KFOLDS = 5
-    TEST_SPLIT = 231 # Chose 15% of the data
-    TIME_SPLIT = 27 # From EDA different regime
     
-    df_train, df_test, target = load_data(TEST_SPLIT, TIME_SPLIT)
-    res, oof, sel_count = run_cv(df_train, target, kfolds=KFOLDS,
+    cfg = load_config()
+    if args.overrides:
+        overrides = parse_overrides(args.overrides)       # CLI over everything
+        cfg = cfg.with_model_overrides(overrides)
+    
+    run_dir = make_run(
+        config={"script": "train_xgb", "use_selection": args.use_selection,
+                "repeats": args.repeats, "kfolds": cfg.pipeline.kfolds,
+                "tail_n": cfg.pipeline.tail_n, "holdout_n": cfg.pipeline.holdout_n,
+                "model": cfg.model_dump(), "random_state": cfg.pipeline.random},
+        run_name=args.run_name or ("xgb_sel" if args.use_selection else "xgb_base"),
+        note=args.note,
+    )
+    
+    
+    df_train, df_test, target, data_info = load_data(cfg.pipeline.holdout_n, cfg.pipeline.tail_n)
+
+    save_splits(run_dir, df_train, df_test)
+    
+    res, oof, sel_count = run_cv(df_train, target, cfg.model_dump(), cfg.pipeline.random,
+                                 kfolds=cfg.pipeline.kfolds,
                                  repeats=args.repeats,
-                                 use_selection=args.use_selection, logger=logger,)
+                                 use_selection=args.use_selection,)
     
-    final, feats, p_hold = refit_final(df_train, df_test, oof, res, sel_count, 
-                                kfolds=KFOLDS,
+    final, feats, p_hold = refit_final(df_train, df_test, oof, res, cfg.model_dump(),
+                                sel_count, kfolds=cfg.pipeline.kfolds,
                                 repeats=args.repeats,
-                                use_selection=args.use_selection,logger=logger,)
+                                use_selection=args.use_selection,random=cfg.pipeline.random)
 
-    evaluate(df_train, df_test, oof, p_hold, logger)
+    evaluate(df_train, df_test, oof, p_hold,)
 
     df_X = df_train.drop(columns=["timestamp", "target"])
 
@@ -244,10 +275,17 @@ def main(argv=None):         # argv param => testable
         "Top SHAP features:\n%s",
         shap_summary.head(15).to_string(),
     )
+    
+    append_index(run_dir, {
+        "run_name": args.run_name, "note": args.note,
+        "data": data_info["features_sha256_16"],
+        "git_sha": ...,"cv_aucpr_mean": ..., "holdout_aucpr": ...,
+    })
 
 
 if __name__ == "__main__":
     main()
+    #main([])
     #main(["--no-selection", "--repeats", "3"])
 
 # %%

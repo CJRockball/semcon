@@ -6,7 +6,7 @@ from pathlib import Path
 
 from semcon.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS, LOGS
 from semcon.utils import setup_logging
-
+from semcon.tracking import write_dataset_card
 
 
 #%%
@@ -145,7 +145,10 @@ def drop_basic(dfX, dfy):
     dfX = dfX.drop(columns=list(to_drop))
     
     dfX.to_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
+    write_dataset_card(DATA_PROCESSED / 'dfX_v1.parquet', dfX)
     dfy.to_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
+    write_dataset_card(DATA_PROCESSED / 'dfy_v1.parquet', dfy)
+        
     return dfX, dropped_cols
 
 #%%

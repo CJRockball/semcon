@@ -7,7 +7,7 @@ name = "semcon"
 version = "0.1.0"
 description = "Wafer pass/fail yield prediction from inline sensor data (SECOM): leakage-free cross-validation, missingness-as-signal features, and drift-quantified evaluation"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Patrick Carlberg" }]
 keywords = [
@@ -24,7 +24,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
@@ -40,6 +39,7 @@ dependencies = [
     "scipy>=1.11",          # spearmanr, connected_components, stats
     "matplotlib>=3.8",
     "seaborn>=0.13",        # EDA notebook
+    "pydantic>=2.0,<3.0",
 ]
 
 # Extras = optional RUNTIME features, published in package metadata.
@@ -85,7 +85,7 @@ semcon-features = "semcon.feature_eng:main"
 semcon-train = "semcon.train_xgb:main"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 100
 src = ["src"]
 
@@ -98,5 +98,5 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 ignore_missing_imports = true   # xgboost/shap ship incomplete stubs

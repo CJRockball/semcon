@@ -7,7 +7,7 @@ from pathlib import Path
 
 from semcon.paths import DATA_PROCESSED, LOGS
 from semcon.utils import setup_logging
-
+from semcon.tracking import write_dataset_card
 
 # %% missingness indicators — built from RAW features
                  # partial 5th block: columns 542..589
@@ -54,6 +54,8 @@ def main():
 
     df_model = build_features(df_values, dfX_raw, clique1, clique2, block, logger)
     df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
+    write_dataset_card(DATA_PROCESSED / 'dfX_v2.parquet', df_model)
+    
     logger.info(f"Saved dfX_v2.parquet {df_model.shape}")
 
     
