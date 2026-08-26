@@ -145,7 +145,7 @@ def drop_basic(dfX, dfy):
     dfX = dfX.drop(columns=list(to_drop))
     
     dfX.to_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
-    write_dataset_card(DATA_PROCESSED / 'dfX_v1.parquet', dfX)
+    write_dataset_card(DATA_PROCESSED / 'dfX_v1.parquet', dfX, dfy['target'])
     dfy.to_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
     write_dataset_card(DATA_PROCESSED / 'dfy_v1.parquet', dfy)
         

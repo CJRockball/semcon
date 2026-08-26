@@ -4,10 +4,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+import logging
 
 from semcon.paths import DATA_PROCESSED, LOGS
 from semcon.utils import setup_logging
 from semcon.tracking import write_dataset_card
+
+logger = logging.getLogger("semcon")
 
 # %% missingness indicators — built from RAW features
                  # partial 5th block: columns 542..589
@@ -41,7 +44,7 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame,
 
 
 def main():
-    logger = setup_logging(logfile=LOGS / "ml.log")
+
     logger.info('[feature_eng.py] Start feature engineering pipeline')
 
     clique1 = [72, 73, 345, 346]      # CLIQUE_14 OR 0.49, p=0.0008
@@ -51,10 +54,11 @@ def main():
 
     df_values = pd.read_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
     dfX_raw   = pd.read_parquet(DATA_PROCESSED / 'dfX_raw.parquet')
+    dfy = pd.read_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
 
     df_model = build_features(df_values, dfX_raw, clique1, clique2, block, logger)
     df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
-    write_dataset_card(DATA_PROCESSED / 'dfX_v2.parquet', df_model)
+    write_dataset_card(DATA_PROCESSED / 'dfX_v2.parquet', df_model, dfy['target'])
     
     logger.info(f"Saved dfX_v2.parquet {df_model.shape}")
 

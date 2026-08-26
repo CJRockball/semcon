@@ -8,7 +8,7 @@ class PipelineConfig(BaseModel):
     kfolds: int = Field(default=5, ge=2)
     tail_n: int = 27
     holdout_n: int = 231
-    random: int = 1337
+    seed: int = 1337
 
 class SelectionConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")

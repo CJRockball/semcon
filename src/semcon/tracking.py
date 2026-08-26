@@ -77,7 +77,7 @@ def hash_file(path: Path, algo: str = "sha256", chunk: int = 1 << 20) -> str:
 
 
 def make_run(config: dict, run_name: str | None = None, note: str = "",
-             runs_root: Path | None = None) -> Path:
+             runs_root: Path | None = None) -> tuple[Path, dict]:
     """Create artifacts/runs/<timestamp>_<name>/ and write config.json."""
     runs_root = runs_root or ARTIFACTS / "runs"
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -94,7 +94,7 @@ def make_run(config: dict, run_name: str | None = None, note: str = "",
         "config": config,
     }
     (run_dir / "config.json").write_text(json.dumps(meta, indent=2, default=str))
-    return run_dir
+    return run_dir, meta
 
 
 def save_dataset_info(run_dir: Path, *, features_path: Path, target_path: Path,
