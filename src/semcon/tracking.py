@@ -147,7 +147,7 @@ def append_index(run_dir: Path, metrics: dict,
     """Append one row to runs/index.csv — the cross-run comparison table.
     Deliberately dumb: whatever keys the caller puts in `metrics` become
     columns (run name, note, data hash, headline metrics)."""
-    index_file = index_file or run_dir.parent / "index.csv"
+    index_file = ARTIFACTS / "index.csv" #index_file or run_dir.parent.parent / "index.csv"
     row = {"run_id": run_dir.name, **metrics}
     df = pd.DataFrame([row])
     df.to_csv(index_file, mode="a", header=not index_file.exists(), index=False)

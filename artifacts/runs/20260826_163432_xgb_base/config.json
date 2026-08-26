@@ -1,7 +1,7 @@
 {
-  "run_id": "20260826_161012_xgb_sel",
-  "timestamp": "20260826_161012",
-  "git_sha": "78cba1a",
+  "run_id": "20260826_163432_xgb_base",
+  "timestamp": "20260826_163432",
+  "git_sha": "0af0aa7",
   "python": "3.12.3",
   "packages": {
     "numpy": "2.4.6",
@@ -12,7 +12,7 @@
   "note": "",
   "config": {
     "script": "train_xgb",
-    "use_selection": true,
+    "use_selection": false,
     "repeats": 3,
     "kfolds": 5,
     "tail_n": 27,

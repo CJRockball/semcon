@@ -59,7 +59,6 @@ def parse_args(argv=None):
                help='override a model param, repeatable: --set max_depth=5')
     return p.parse_args(argv)
 
-
 def load_data(test_split:int, time_split:int):
     X_PATH = DATA_PROCESSED / 'dfX_v2.parquet'
     Y_PATH = DATA_PROCESSED / 'dfy_v1.parquet'
@@ -304,7 +303,7 @@ def main(argv=None):         # argv param => testable
     logger.info(f'[train_xgb] end')
 
 if __name__ == "__main__":
-    main()
-    #main(["--no-selection", "--repeats", "3"])
+    #main()
+    main(["--no-selection"])
 
 # %%
