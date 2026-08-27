@@ -177,12 +177,13 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
     final.fit(df_X[feats], df_y)
 
     p_hold = final.predict_proba(X_hold[feats])[:, 1]
+    np.save(out / "p_hold.npy", p_hold)
     logger.info(f'HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  '
         f'rocauc={roc_auc_score(y_hold, p_hold):.4f}  '
         f'brier={brier_score_loss(y_hold, p_hold):.4f}')
 
-    np.save(out / 'oof_xgb2.npy', oof)
-    res.to_parquet(out / 'cv_metrics_xgb2.parquet')
+    np.save(out / 'oof_xgb1.npy', oof)
+    res.to_parquet(out / 'cv_metrics_xgb1.parquet')
     return final, feats, p_hold, stability
 
 def evaluate(
@@ -242,6 +243,7 @@ def main(argv=None):         # argv param => testable
         argv = [] if "ipykernel" in sys.modules else sys.argv[1:]
     args = parse_args(argv)
     # Log start training pipeline and argv 
+    logger = setup_logging(logfile=LOGS / "ml.log")
     logger.info(f'[train_xgb] start | selection={args.use_selection} '
                 f'repeats={args.repeats}')
     # Load configs and overwrite if new ones are included in argv

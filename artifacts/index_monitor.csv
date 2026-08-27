@@ -1,0 +1,2 @@
+run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift
+20260827_154512_spc,spc,robust,,257,0.0268,0.2877,36

@@ -1,9 +1,6 @@
 #%%
 # build_features.py
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
 import logging
 
 from semcon.paths import DATA_PROCESSED, LOGS
@@ -45,6 +42,7 @@ def build_features(df_values: pd.DataFrame, dfX_raw: pd.DataFrame,
 
 def main():
 
+    logger = setup_logging(logfile=LOGS / "ml.log")
     logger.info('[feature_eng.py] Start feature engineering pipeline')
 
     clique1 = [72, 73, 345, 346]      # CLIQUE_14 OR 0.49, p=0.0008
@@ -60,12 +58,8 @@ def main():
     df_model.to_parquet(DATA_PROCESSED / 'dfX_v2.parquet')
     write_dataset_card(DATA_PROCESSED / 'dfX_v2.parquet', df_model, dfy['target'])
     
-    logger.info(f"Saved dfX_v2.parquet {df_model.shape}")
+    logger.info(f"[feature_eng.py] Saved dfX_v2.parquet {df_model.shape}")
 
     
-
-
 if __name__ == '__main__':
     main()
-
-# %%

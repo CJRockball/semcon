@@ -97,30 +97,6 @@ def make_run(config: dict, run_name: str | None = None, note: str = "",
     return run_dir, meta
 
 
-def save_dataset_info(run_dir: Path, *, features_path: Path, target_path: Path,
-                      dfX: pd.DataFrame, dfy: pd.DataFrame) -> dict:
-    """Write dataset.json: input identity for this run.
-
-    Three layers: content hash (did the file change), structure (shape plus
-    a column-list hash, which catches same-count/different-membership), and
-    target stats (fail count, prevalence).
-    """
-    cols = "|".join(map(str, dfX.columns))
-    info = {
-        "features_file": features_path.name,
-        "features_sha256_16": hash_file(features_path)[:16],
-        "n_rows": int(len(dfX)),
-        "n_features": int(dfX.shape[1]),
-        "columns_md5_16": hashlib.md5(cols.encode()).hexdigest()[:16],
-        "target_file": target_path.name,
-        "target_sha256_16": hash_file(target_path)[:16],
-        "n_fails": int(dfy["target"].sum()),
-        "prevalence": float(dfy["target"].mean()),
-    }
-    (run_dir / "dataset.json").write_text(json.dumps(info, indent=2))
-    return info
-
-
 def save_splits(run_dir: Path, df_train: pd.DataFrame,
                 df_test: pd.DataFrame) -> None:
     """Persist the exact split. Positional indices are meaningful because
@@ -144,13 +120,11 @@ def save_features(run_dir: Path, feats: list,
 
 def append_index(run_dir: Path, metrics: dict,
                  index_file: Path | None = None) -> None:
-    """Append one row to runs/index.csv — the cross-run comparison table.
-    Deliberately dumb: whatever keys the caller puts in `metrics` become
-    columns (run name, note, data hash, headline metrics)."""
-    index_file = ARTIFACTS / "index.csv" #index_file or run_dir.parent.parent / "index.csv"
-    row = {"run_id": run_dir.name, **metrics}
-    df = pd.DataFrame([row])
-    df.to_csv(index_file, mode="a", header=not index_file.exists(), index=False)
+    index_file = index_file or ARTIFACTS / "index.csv"
+    row = pd.DataFrame([{"run_id": run_dir.name, **metrics}])
+    if index_file.exists():
+        row = pd.concat([pd.read_csv(index_file), row], ignore_index=True)
+    row.to_csv(index_file, index=False)
 
 
 def write_dataset_card(parquet_path: Path, df: pd.DataFrame,

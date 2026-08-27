@@ -1,13 +1,13 @@
 #%%
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
+import logging
 
 from semcon.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS, LOGS
 from semcon.utils import setup_logging
 from semcon.tracking import write_dataset_card
 
+logger = logging.getLogger("semcon")
 
 #%%
 
@@ -144,12 +144,7 @@ def drop_basic(dfX, dfy):
                     'nzv': drop.tolist(), 'corr':list(to_drop)}
     dfX = dfX.drop(columns=list(to_drop))
     
-    dfX.to_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
-    write_dataset_card(DATA_PROCESSED / 'dfX_v1.parquet', dfX, dfy['target'])
-    dfy.to_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
-    write_dataset_card(DATA_PROCESSED / 'dfy_v1.parquet', dfy)
-        
-    return dfX, dropped_cols
+    return dfX, dfy, dropped_cols
 
 #%%
 
@@ -159,8 +154,16 @@ def main():
     logger.info('[explore.py] Start data pipeline')
     
     dfX, dfy = load_data()
-    dfX, dropped_cols = drop_basic(dfX, dfy)
-    
+    dfX, dfy, dropped_cols = drop_basic(dfX, dfy)
+
+    dfX.to_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
+    write_dataset_card(DATA_PROCESSED / 'dfX_v1.parquet', dfX, dfy['target'])
+    logger.info(f"[explore.py] Saved dfX_v1.parquet {dfX.shape}")
+
+    dfy.to_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
+    write_dataset_card(DATA_PROCESSED / 'dfy_v1.parquet', dfy)
+    logger.info(f"[explore.py] Saved dfy_v1.parquet {dfy.shape}")    
+
     return
 
 
