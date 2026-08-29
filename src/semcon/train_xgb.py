@@ -184,7 +184,7 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
         f'brier={brier_score_loss(y_hold, p_hold):.4f}')
 
     np.save(out / 'oof_xgb1.npy', oof)
-    res.to_parquet(out / 'cv_metrics_xgb1.csv')
+    res.to_csv(out / 'cv_metrics_xgb1.csv')
     return final, feats, p_hold, stability
 
 def evaluate(
