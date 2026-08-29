@@ -1,3 +1,0 @@
-run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift,window,seasonal_winner,failfrac_order,exog_winner,exog_coef,exog_p,ro_winner,ro_mase,holdout_mase,holdout_coverage,ch467_breach_share
-20260827_154512_spc,spc,robust,,257.0,0.0268,0.2877,36.0,,,,,,,,,,,
-20260828_225259_sarimax,sarimax,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,0.0

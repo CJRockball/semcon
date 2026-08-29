@@ -261,8 +261,6 @@ def select_showcase(screen: pd.DataFrame, stable: set[str], delta_min: float,
     if len(picks) < n_showcase:  # top up from the strongest drifters overall
         rest = s.sort_values("delta", ascending=False).index
         picks += [f for f in rest if f not in picks][: n_showcase - len(picks)]
-    # TODO(rca): when artifacts/value_cliques.parquet exists, dedup picks to one
-    # representative per clique - the clique is the unit of evidence, not the member.
     return picks, cells
 
 

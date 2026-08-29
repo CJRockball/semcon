@@ -176,6 +176,7 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
     )
     final.fit(df_X[feats], df_y)
 
+    final.get_booster().save_model(str(out / "model.ubj"))
     p_hold = final.predict_proba(X_hold[feats])[:, 1]
     np.save(out / "p_hold.npy", p_hold)
     logger.info(f'HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  '
@@ -183,7 +184,7 @@ def refit_final(df_train:pd.DataFrame, df_test:pd.DataFrame, oof:np.ndarray,
         f'brier={brier_score_loss(y_hold, p_hold):.4f}')
 
     np.save(out / 'oof_xgb1.npy', oof)
-    res.to_parquet(out / 'cv_metrics_xgb1.parquet')
+    res.to_parquet(out / 'cv_metrics_xgb1.csv')
     return final, feats, p_hold, stability
 
 def evaluate(
@@ -277,6 +278,7 @@ def main(argv=None):         # argv param => testable
                                 sel_count, kfolds=cfg.pipeline.kfolds,
                                 repeats=args.repeats,use_selection=args.use_selection,
                                 random=cfg.pipeline.seed, out=run_dir)
+    
     # Save information on selected features
     save_features(run_dir, feats, stability)
     # Evaluate full model on holdout data
