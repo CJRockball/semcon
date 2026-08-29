@@ -307,7 +307,7 @@ def main(argv=None):         # argv param => testable
     logger.info(f'[train_xgb] end')
 
 if __name__ == "__main__":
-    #main()
-    main(["--no-selection"])
+    main()
+    #main(["--no-selection"])
 
 # %%

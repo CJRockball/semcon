@@ -1,0 +1,22 @@
+{
+  "run_id": "20260829_103202_sarimax",
+  "timestamp": "20260829_103202",
+  "git_sha": "c045e0e",
+  "python": "3.11.14",
+  "packages": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "xgboost": "2.1.1"
+  },
+  "note": "",
+  "config": {
+    "window": 50,
+    "lag": 20,
+    "min_train": 16,
+    "horizon": 2,
+    "note": null,
+    "i_hold": 1309,
+    "i_tail": 1540
+  }
+}

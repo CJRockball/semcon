@@ -82,7 +82,7 @@ packages = ["src/semcon"]
 [project.scripts]
 semcon-explore = "semcon.explore:main"
 semcon-features = "semcon.feature_eng:main"
-semcon-train = "semcon.train_xgb:main"
+semcon-train_xgb = "semcon.train_xgb:main"
 semcon-calibrate = "semcon.calibrate:main"
 semcon-spc = "semcon.spc:main"
 semcon-sarimax = "semcon.sarimax:main"
