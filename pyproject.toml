@@ -40,6 +40,7 @@ dependencies = [
     "matplotlib>=3.8",
     "seaborn>=0.13",        # EDA notebook
     "pydantic>=2.0,<3.0",
+    "SQLAlchemy>=2.0,<2.1"
 ]
 
 # Extras = optional RUNTIME features, published in package metadata.
