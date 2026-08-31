@@ -24,8 +24,10 @@ def extract(
     end: str = "2100-01-01",
     cutoff=CUTOFF,
 ) -> pd.DataFrame:
+    
     df = run_query("extract_wafers", engine, start=start, end=end, cutoff=cutoff)
-
+    df[schema.TIME_COL] = pd.to_datetime(df[schema.TIME_COL], format="ISO8601")
+    
     if cutoff is not None:
         n_clash = int((df[schema.TIME_COL] == pd.Timestamp(cutoff)).sum())
         if n_clash:
