@@ -1,14 +1,34 @@
+"""Schema facts — structural constants the pipeline assumes.
+
+Decisions (cutoff, holdout size, thresholds) live in config.py.
+Facts about the data's shape live here. Rule of thumb: if changing a
+value would break the code's assumptions, it is a fact and belongs here.
+"""
+from enum import Enum
+
 KEY_COL = "wafer_id"
 TARGET_COL = "target"
 TIME_COL = "timestamp"
-SENSOR_PREFIX = "s"
-N_SENSORS = 590
-ENG_PREFIX = "f_"
-METADATA_COLS = [TIME_COL, "split"]
+SPLIT_COL = "split"
 
-class Role:            # or StrEnum
+SENSOR_PREFIX = "s"
+ENG_PREFIX = "f_"
+N_SENSORS = 590
+
+METADATA_COLS = [TIME_COL, SPLIT_COL]
+NON_FEATURE_COLS = [KEY_COL, TARGET_COL, TIME_COL, SPLIT_COL]
+
+EXPECTED_WAFERS = 1567  # external data contract for the SECOM snapshot
+
+
+class Role(str, Enum):
     KEY = "key"
     METADATA = "metadata"
     FEATURE_RAW = "feature_raw"
     FEATURE_ENG = "feature_eng"
     TARGET = "target"
+
+
+class Status(str, Enum):
+    ACTIVE = "active"
+    EXCLUDED = "excluded"
