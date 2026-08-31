@@ -57,3 +57,7 @@ def parse_overrides(overrides: list[str]) -> dict:
         out[key] = value
     return out
 
+
+# --- Data decisions (frozen after EDA; see validation.md) ---
+CUTOFF = None   # pd.Timestamp(...) once EDA decides; None = full frame, split='unassigned'
+HOLDOUT_FRACTION = None
