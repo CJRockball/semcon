@@ -1,13 +1,10 @@
 -- extract_wafers.sql
 -- Full wide frame: sensor readings joined to labels, chronological.
---
--- Params:
---   :start, :end   datetime, inclusive bounds on timestamp
---   :cutoff        datetime or NULL; NULL -> split = 'unassigned'
+-- Params: start, end (datetime, inclusive); cutoff (datetime or NULL,
+--         NULL -> split = 'unassigned')
 -- Returns: wafer_id, s001..s590, target, timestamp, split
---
 -- Convention: cv is inclusive of the cutoff, holdout exclusive.
--- Callers must assert no timestamp equals :cutoff exactly.
+-- Callers must assert no timestamp equals cutoff exactly.
 SELECT r.*, l.target, l.timestamp,
        CASE
            WHEN :cutoff IS NULL THEN 'unassigned'
