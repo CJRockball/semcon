@@ -3,6 +3,23 @@ from pydantic import BaseModel, ConfigDict, Field
 import tomllib
 from semcon.paths import ROOT
 
+# --- Data decisions (frozen after EDA; see validation.md) ---
+CUTOFF = None   # pd.Timestamp(...) once EDA decides; None = full frame, split='unassigned'
+HOLDOUT_FRACTION = None
+
+# Thresholds reproduce the legacy drop_basic() run exactly (590 -> 257);
+# provenance: flat-file EDA, 2026-08-26..29 run artifacts.
+
+# --- Column quality rules (EDA-derived; see artifacts/eda_*/eda_summary.md) ---
+NAN_FRAC_MAX = 0.5             # drop columns with >50% missing
+DOMINANT_FRAC = 0.99           # dominant value in >99% of non-null rows flags NZV
+CV_LIMIT = 0.01                # coefficient-of-variation floor
+FEW_UNIQUE = 5                 # fewer unique values than this flags NZV
+MIN_DEVIANT_N = 5              # deviant rows needed to attempt a rescue
+DEVIANT_FAIL_ENRICHMENT = 2.0  # deviants >= 2x base fail rate rescues the column
+FEATURE_CORR = 0.95            # correlated pair threshold; drop the more-missing
+
+
 class PipelineConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kfolds: int = Field(default=5, ge=2)
@@ -58,6 +75,4 @@ def parse_overrides(overrides: list[str]) -> dict:
     return out
 
 
-# --- Data decisions (frozen after EDA; see validation.md) ---
-CUTOFF = None   # pd.Timestamp(...) once EDA decides; None = full frame, split='unassigned'
-HOLDOUT_FRACTION = None
+

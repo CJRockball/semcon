@@ -6,12 +6,13 @@ registration helper. All other modules import from here.
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import Engine, bindparam, create_engine, text
+from sqlalchemy import Engine, bindparam, create_engine, inspect, text
 
 from semcon import schema
 from semcon.paths import ROOT, SQL
 
 DB_PATH = ROOT / "data" / "secom.db"
+REQUIRED_TABLES = {"sensor_readings", "wafer_labels", "column_registry", "ingestion_log"}
 
 
 def get_engine(db_path: Path = DB_PATH) -> Engine:
@@ -20,10 +21,29 @@ def get_engine(db_path: Path = DB_PATH) -> Engine:
     return create_engine(f"sqlite:///{db_path}", echo=False)
 
 
+def assert_schema(engine: Engine) -> None:
+    """Fail loudly and helpfully on stale-schema databases.
+
+    The DB is a derived artifact: when in doubt, rebuild it.
+    Call from readers, never from db_ingest (which creates the schema).
+    """
+    missing = REQUIRED_TABLES - set(inspect(engine).get_table_names())
+    if missing:
+        raise RuntimeError(
+            f"DB at {engine.url} is missing tables {sorted(missing)} — stale "
+            "schema. Rebuild: rm data/secom.db && python -m semcon.db_ingest"
+        )
+        
+
 def run_query(name: str, engine: Engine, **params) -> pd.DataFrame:
     """Run sql/<name>.sql with named parameters. The filename is the query name."""
     query = (SQL / f"{name}.sql").read_text()
     return pd.read_sql(text(query), engine, params=params)
+
+
+def export_registry_csv(engine: Engine) -> None:
+    """Write data/column_registry.csv for git-visible review of flips."""
+    load_registry(engine).to_csv(ROOT / "data" / "column_registry.csv", index=False)
 
 
 def load_registry(engine: Engine) -> pd.DataFrame:
@@ -53,3 +73,17 @@ def register_columns(rows: list[dict], engine: Engine) -> None:
             {"names": names},
         )
         pd.DataFrame(rows).to_sql("column_registry", conn, if_exists="append", index=False)
+        
+def retire_columns(names: list[str], reason: str, engine: Engine) -> None:
+    """Mark registry columns excluded, with the reason. Frames never lose
+    columns mid-pipeline — removal is a status change, not a deletion."""
+    if not names:
+        return
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "UPDATE column_registry SET status = :status, notes = :reason "
+                "WHERE column_name IN :names"
+            ).bindparams(bindparam("names", expanding=True)),
+            {"status": schema.Status.EXCLUDED.value, "reason": reason, "names": names},
+        )

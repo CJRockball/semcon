@@ -1,172 +1,219 @@
-#%%
-import pandas as pd
-import numpy as np
-import logging
+"""EDA and column retirement — reads from the database, writes no data files.
 
-from semcon.paths import DATA_RAW, DATA_PROCESSED, ARTIFACTS, LOGS
-from semcon.utils import setup_logging
+Roles after the SQL migration:
+  1. extract() the wide frame (raw -1/1 target, split labels, all 590 sensors)
+  2. assess column quality against configured rules (pure, testable)
+  3. apply verdicts to column_registry as status flips, one reason per rule
+  4. write EDA evidence (diagnostic table, summary, dataset card) — docs, not data
+
+The frame never loses columns mid-pipeline: retirement is a registry status
+change, and downstream consumers build X via feature_columns().
+
+Legacy note: dfX_raw.parquet / dfX_v1.parquet / dfy_v1.parquet are frozen
+historical artifacts of the flat-file pipeline. Nothing writes them now.
+
+Leakage note: the NZV enrichment rescue uses the target (deviant fail rate
+vs base rate). Statistics are computed on the full frame until
+config.CUTOFF is set; then compute on the CV pool and apply globally —
+the call site changes, the rules stay.
+"""
+import logging
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+
+from semcon import schema
+from semcon.config import (
+    CV_LIMIT,
+    DEVIANT_FAIL_ENRICHMENT,
+    DOMINANT_FRAC,
+    FEATURE_CORR,
+    FEW_UNIQUE,
+    MIN_DEVIANT_N,
+    NAN_FRAC_MAX,
+)
+from semcon.db import (
+    assert_schema,
+    export_registry_csv,
+    feature_columns,
+    get_engine,
+    load_registry,
+    retire_columns,
+)
+from semcon.extract import extract
+from semcon.paths import ARTIFACTS, LOGS
 from semcon.tracking import write_dataset_card
+from semcon.utils import setup_logging
 
 logger = logging.getLogger("semcon")
 
-#%%
 
-def load_data():
-    dfX = pd.read_csv(DATA_RAW / 'secom.data',
-                    sep=r"\s+",
-                    header=None,
-                    na_values=['NaN'],
-                    dtype="float64",
-                    )
+def assess_quality(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, list[str]]]:
+    """Assess sensor columns against the quality rules. Pure — no I/O.
 
-    dfy = pd.read_csv(DATA_RAW / 'secom_labels.data',
-                    sep=r'\s+',
-                    header=None,
-                    names=['target', 'timestamp']
-                    )
+    Rule order is load-bearing: it reproduces the legacy drop_basic()
+    pipeline exactly (constant -> high-NaN -> NZV -> correlated), so the
+    retired set matches the historical 590 -> 257 run.
 
-    dfy['timestamp'] = pd.to_datetime(
-                        dfy['timestamp'],
-                        format="%d/%m/%Y %H:%M:%S",
-                        errors='coerce',
-    ) 
+    Returns (diagnostic table indexed by feature, {rule: [columns]}).
+    """
+    sensors = [
+        c for c in df.columns
+        if c.startswith(schema.SENSOR_PREFIX) and len(c) == 4
+    ]
+    fail = df[schema.TARGET_COL].eq(1)
+    fail_rate = float(fail.mean())
 
-    dfy['target'] = dfy['target'].eq(1).astype('int8')
-
-    assert len(dfX) == len(dfy) == 1567
-    assert dfX.shape[1] == 590
-
-
-    dfX.to_parquet(DATA_PROCESSED / 'dfX_raw.parquet')
-    dfy.to_parquet(DATA_PROCESSED / 'dfy_raw.parquet')
-    return dfX, dfy
-
-# %% Remove constant
-
-def drop_basic(dfX, dfy):
-    n_values = dfX.nunique()
-    drop_list_const = n_values[n_values == 1].index.tolist()
-    dfX = dfX.drop(columns=drop_list_const)
-    #print(dfX.shape)
-    # drop features with >50% nan
-    drop_feature_limit = int(len(dfX)/2)
-
-    n_nan = dfX.isnull().sum()
-    drop_list_nan = n_nan[n_nan > drop_feature_limit].index.tolist()
-    dfX = dfX.drop(columns=drop_list_nan)
-    #print(dfX.shape)
-
-    print(f'Number of constant: {len(drop_list_const)}, number of nan>50%: {len(drop_list_nan)}')
-
-
-    # concentrated-value diagnostics — vectorized, no loop
-    DOMINANT_FRAC = 0.99   # dominant value in >99% of non-null rows
-    CV_LIMIT      = 0.01
-    FEW_UNIQUE    = 5
-    DEVIANT_FAIL_ENRICHMENT = 2.0   # keep if deviants are >=2x enriched for fails
-
-    fail_rate = dfy['target'].mean()          # ~0.066
-
-    def dominant_value_stats(s: pd.Series):
-        vc = s.value_counts(dropna=True)
-        dom_val, dom_cnt = vc.index[0], vc.iloc[0]
-        return dom_val, dom_cnt / s.notna().sum()
-
+    # full stats table — EDA evidence for every sensor, verdict filled later
     rows = []
-    for col in dfX.columns:
-        s = dfX[col]
-        dom_val, dom_frac = dominant_value_stats(s)
+    for col in sensors:
+        s = df[col]
+        vc = s.value_counts(dropna=True)
+        if len(vc):
+            dom_val, dom_cnt = vc.index[0], vc.iloc[0]
+            dom_frac = dom_cnt / s.notna().sum()
+        else:
+            dom_val, dom_frac = np.nan, np.nan
         mean, std = s.mean(), s.std()
         cv = abs(std / mean) if pd.notna(mean) and abs(mean) > 1e-12 else np.nan
-
-        # deviant rows = not the dominant value (and not NaN)
         deviant = s.notna() & (s != dom_val)
-        n_dev = deviant.sum()
-        dev_fail_rate = dfy.loc[deviant, 'target'].mean() if n_dev > 0 else np.nan
-
+        n_dev = int(deviant.sum())
+        dev_fail_rate = fail[deviant].mean() if n_dev > 0 else np.nan
         rows.append({
-            'feature':      col,
-            'n_unique':     s.nunique(),
-            'dom_frac':     dom_frac,
-            'cv':           cv,
-            'missing_rate': s.isna().mean(),
-            'n_deviant':    n_dev,
-            'dev_fail_rate': dev_fail_rate,
-            'enrichment':   dev_fail_rate / fail_rate if n_dev > 0 else np.nan,
+            "feature": col,
+            "n_unique": s.nunique(),
+            "dom_frac": dom_frac,
+            "cv": cv,
+            "missing_rate": s.isna().mean(),
+            "n_deviant": n_dev,
+            "dev_fail_rate": dev_fail_rate,
+            "enrichment": dev_fail_rate / fail_rate if n_dev > 0 else np.nan,
         })
+    diag = pd.DataFrame(rows).set_index("feature")
 
-    diag = pd.DataFrame(rows).set_index('feature')
-    diag.to_parquet(ARTIFACTS / 'diagnostic.parquet')
+    # rule 1: constants
+    n_unique = df[sensors].nunique()
+    constants = n_unique[n_unique == 1].index.tolist()
 
-    df_check = pd.read_parquet(ARTIFACTS / 'diagnostic.parquet')
+    # rule 2: high missing
+    stage2 = [c for c in sensors if c not in set(constants)]
+    miss = df[stage2].isna().mean()
+    high_nan = miss[miss > NAN_FRAC_MAX].index.tolist()
 
-
-    flagged = diag[
-        (diag['dom_frac'] > DOMINANT_FRAC) |
-        (diag['cv'] < CV_LIMIT) |
-        (diag['n_unique'] < FEW_UNIQUE)
+    # rule 3: near-zero variance, with target-enrichment rescue
+    stage3 = [c for c in stage2 if c not in set(high_nan)]
+    d3 = diag.loc[stage3]
+    flagged = d3[
+        (d3["dom_frac"] > DOMINANT_FRAC)
+        | (d3["cv"] < CV_LIMIT)
+        | (d3["n_unique"] < FEW_UNIQUE)
     ]
-
-    # keep flagged features whose rare deviants are enriched for fails
-    keep = flagged[
-        (flagged['n_deviant'] >= 5) &
-        (flagged['enrichment'] >= DEVIANT_FAIL_ENRICHMENT)
+    rescued = flagged[
+        (flagged["n_deviant"] >= MIN_DEVIANT_N)
+        & (flagged["enrichment"] >= DEVIANT_FAIL_ENRICHMENT)
     ]
+    nzv = flagged.index.difference(rescued.index).tolist()
 
-    drop = flagged.index.difference(keep.index)
-
-    print(f"flagged near-constant: {len(flagged)}, keep (enriched): {len(keep)}, drop: {len(drop)}")
-
-    dfX = dfX.drop(columns=drop)
-    print(f'Total remaining features: {dfX.shape[1]}')
-
-    # Drop correlated 
-    corr_matrix = dfX.corr()
-    pairs = corr_matrix.unstack()
-
-    # 3. Filter out self-correlation (1.0) and duplicate mirrored pairs
-    # We look at the multi-index keys and only keep pairs where the first name is less than the second
-    unique_pairs = pairs[pairs.index.get_level_values(0) < pairs.index.get_level_values(1)]
-
-    # 4. Sort to see the strongest relationships
-    sorted_pairs = unique_pairs.sort_values(ascending=False)
-
-    # Keep pairs with abs correlation > 0.9 and make drop list
-    abs_sorted_pairs = sorted_pairs.abs()
+    # rule 4: correlated pairs — drop the more-missing member
+    stage4 = [c for c in stage3 if c not in set(nzv)]
+    corr = df[stage4].corr().unstack()
+    pairs = corr[corr.index.get_level_values(0) < corr.index.get_level_values(1)]
+    abs_pairs = pairs.abs().sort_values(ascending=False)
     to_drop = set()
-    for a, b in abs_sorted_pairs[abs_sorted_pairs > 0.95].index:
+    for a, b in abs_pairs[abs_pairs > FEATURE_CORR].index:
         if a not in to_drop and b not in to_drop:
-            # drop the one with more missing data
-            miss = dfX[[a, b]].isna().mean()
-            to_drop.add(miss.idxmax())
+            m = df[[a, b]].isna().mean()
+            to_drop.add(m.idxmax())
+    correlated = sorted(to_drop)
 
-    dropped_cols = {'constant': drop_list_const, 'high_nan': drop_list_nan, 
-                    'nzv': drop.tolist(), 'corr':list(to_drop)}
-    dfX = dfX.drop(columns=list(to_drop))
-    
-    return dfX, dfy, dropped_cols
+    verdicts = {
+        "constant: n_unique == 1": constants,
+        f"missing: NaN fraction > {NAN_FRAC_MAX}": high_nan,
+        (
+            f"near-zero variance: dom_frac > {DOMINANT_FRAC} or cv < {CV_LIMIT} "
+            f"or n_unique < {FEW_UNIQUE}; deviants not enriched "
+            f"(rescue needs n_deviant >= {MIN_DEVIANT_N} and "
+            f"enrichment >= {DEVIANT_FAIL_ENRICHMENT})"
+        ): nzv,
+        (
+            f"correlated: |r| > {FEATURE_CORR}; "
+            "dropped the more-missing member of the pair"
+        ): correlated,
+    }
+    return diag, verdicts
 
-#%%
 
-def main():
-    
-    logger = setup_logging(logfile=LOGS / "ml.log")
-    logger.info('[explore.py] Start data pipeline')
-    
-    dfX, dfy = load_data()
-    dfX, dfy, dropped_cols = drop_basic(dfX, dfy)
+def apply_verdicts(verdicts: dict[str, list[str]], engine) -> int:
+    """Flip registry status per rule, so every exclusion carries its reason."""
+    total = 0
+    for reason, cols in verdicts.items():
+        if cols:
+            retire_columns(cols, reason, engine)
+            total += len(cols)
+    return total
 
-    dfX.to_parquet(DATA_PROCESSED / 'dfX_v1.parquet')
-    write_dataset_card(DATA_PROCESSED / 'dfX_v1.parquet', dfX, dfy['target'])
-    logger.info(f"[explore.py] Saved dfX_v1.parquet {dfX.shape}")
 
-    dfy.to_parquet(DATA_PROCESSED / 'dfy_v1.parquet')
-    write_dataset_card(DATA_PROCESSED / 'dfy_v1.parquet', dfy)
-    logger.info(f"[explore.py] Saved dfy_v1.parquet {dfy.shape}")    
+def write_eda_evidence(
+    diag: pd.DataFrame, verdicts: dict[str, list[str]], n_active: int, engine
+) -> None:
+    out = ARTIFACTS / f"eda_{datetime.now():%Y%m%d_%H%M%S}"
+    out.mkdir(parents=True, exist_ok=True)
 
-    return
+    verdict_col = pd.Series("keep", index=diag.index)
+    for rule, cols in reversed(list(verdicts.items())):
+        verdict_col.loc[cols] = rule  # earlier rules win (precedence)
+    diag = diag.assign(verdict=verdict_col)
+
+    diag.to_parquet(out / "diagnostic.parquet")
+    diag.to_csv(out / "diagnostic.csv")
+    write_dataset_card(out / "diagnostic.parquet", diag)
+
+    lines = [
+        f"# EDA summary — {datetime.now():%Y-%m-%d %H:%M}",
+        "",
+        "Rules and thresholds live in config.py (decisions, not constants).",
+        "",
+        "| rule | columns retired |",
+        "|---|---|",
+    ]
+    for rule, cols in verdicts.items():
+        lines.append(f"| {rule} | {len(cols)} |")
+    lines += [
+        "",
+        f"Active sensors after retirement: **{n_active}** "
+        "(legacy flat-file run: 257 — must match)",
+        "",
+        "Supervised-rule note: the NZV enrichment rescue uses the target. "
+        "Computed on the full frame until config.CUTOFF is set; then on the "
+        "CV pool only, applied globally.",
+        "",
+        "Data artifacts written by this run: none. Registry flips applied; "
+        "this folder is documentation-grade evidence.",
+    ]
+    (out / "eda_summary.md").write_text("\n".join(lines) + "\n")
+    logger.info("[explore] EDA evidence -> %s", out)
+
+
+def main() -> None:
+    global logger
+    logger = setup_logging(logfile=LOGS / "explore.log")
+    logger.info("[explore] start")
+
+    engine = get_engine()
+    assert_schema(engine)
+    df = extract(engine)
+
+    diag, verdicts = assess_quality(df)
+    retired = apply_verdicts(verdicts, engine)
+    active = feature_columns(load_registry(engine))
+    logger.info(
+        f"[explore] retired {retired} sensors, {len(active)} active (legacy run: 257)")
+
+    write_eda_evidence(diag, verdicts, len(active), engine)
+    export_registry_csv(engine)
+    logger.info("[explore] done")
 
 
 if __name__ == "__main__":
     main()
-
