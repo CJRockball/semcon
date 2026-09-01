@@ -4,7 +4,7 @@ One engine factory, one query runner, one registry loader, one
 registration helper. All other modules import from here.
 """
 from pathlib import Path
-
+import hashlib
 import pandas as pd
 from sqlalchemy import Engine, bindparam, create_engine, inspect, text
 
@@ -87,3 +87,23 @@ def retire_columns(names: list[str], reason: str, engine: Engine) -> None:
             ).bindparams(bindparam("names", expanding=True)),
             {"status": schema.Status.EXCLUDED.value, "reason": reason, "names": names},
         )
+        
+       
+def data_fingerprint(engine: Engine) -> dict:
+    """Content fingerprint of the data basis: latest raw-file hashes from
+    ingestion_log plus the extraction-SQL hash.
+
+    Recompute-to-verify: a changed fingerprint means the data basis moved.
+    Config decisions are NOT hashed here — the snapshot manifest records
+    them verbatim, readable without a decoder.
+    """
+    log = pd.read_sql(
+        text(
+            "SELECT source_file, source_sha256 FROM ingestion_log "
+            "ORDER BY ingest_id DESC LIMIT 2"  # one row per source file
+        ),
+        engine,
+    )
+    raw = dict(zip(log["source_file"], log["source_sha256"]))
+    sql_hash = hashlib.sha256((SQL / "extract_wafers.sql").read_bytes()).hexdigest()
+    return {"raw": raw, "extract_sql_sha256": sql_hash}

@@ -6,7 +6,17 @@ Phase II = holdout + tail: frozen limits applied unchanged; the alarm-rate jump 
 Unlike model training, the tail rows are INCLUDED - a monitoring system exists to
 catch exactly that regime change.
 
-Pipeline: screening pass over all sensor columns -> spc_screening.parquet
+Post-migration (2026-09-01): data comes from SQLite via extract() - the raw 590
+sensors, not the retired 257-column value view. A monitoring net should cover
+channels the model never sees, so the screening denominator widens by design
+(degenerate and high-NaN sensors are screened and flagged, not dropped upstream).
+extract() returns raw channels only; the four protocol features (row missing
+rate, clique/block dropout indicators) are computed here on the raw frame from
+the dataset constants in config.py (CLIQUE_14/23, BLOCK5_FIRST). Schema
+constants are the only name source; legacy names in input files (old
+features.json, old EDA master table) are mapped by _current_name().
+
+Pipeline: screening pass over all sensor columns -> spc_screening.csv
 -> overview scatter -> deterministic 2x2 showcase selection -> I-MR/EWMA charts
 -> protocol-feature charts -> rolling fail-rate p-chart.
 """
@@ -15,7 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-from datetime import datetime
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -24,51 +34,118 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from semcon.paths import ARTIFACTS, DATA_PROCESSED, LOGS
+from semcon import schema
+from semcon.paths import ARTIFACTS, LOGS
 from semcon.utils import setup_logging
-from semcon.config import load_config
+from semcon.config import CLIQUE_14, CLIQUE_23, BLOCK5_FIRST, load_config
 from semcon import tracking
+from semcon.db import get_engine, data_fingerprint
+from semcon.extract import extract
+from semcon.snapshots import write_gold_snapshot
 
 logger = logging.getLogger("semcon")
+
 
 D2, D4 = 1.128, 3.267  # I-MR constants, subgroup n = 2
 MAD_TO_SIGMA = 1.4826  # consistency constant for normal data
 
-META = {"timestamp", "target"}
-ENGINEERED = ["miss_clq14", "miss_clq23", "miss_block5", "row_missing_rate"]
-RATE_FEATURES = ["miss_clq14", "miss_clq23", "miss_block5"]
+# Block 5 membership: raw columns BLOCK5_FIRST..590 (legacy 542-589), the late
+# station group. Clique membership lives in config.py (CLIQUE_14/CLIQUE_23).
+BLOCK5 = [f"{schema.SENSOR_PREFIX}{n:03d}" for n in range(BLOCK5_FIRST, 591)]
+
+# Engineered protocol features, computed by add_protocol_features(); charted
+# by plot_protocol, never screened as values.
+RATE_FEATURES = ["f_miss_clq14", "f_miss_clq23", "f_miss_block5"]
 
 # Fallback showcase pool: the 100%-stability sensors from the xgb_sel run
-# (missclq14 also hit 100% but is charted with the protocol features).
-DEFAULT_STABLE = ["21", "510", "59", "348", "431", "28", "129", "103"]
+# (legacy ['21', '510', '59', '348', '431', '28', '129', '103']).
+# f_miss_clq14 also hit 100% but is charted with the protocol features.
+DEFAULT_STABLE = ["s022", "s511", "s060", "s349", "s432", "s029", "s130", "s104"]
+
+
+def _current_name(name: str) -> str:
+    """Accept legacy names (0-based ints, unprefixed miss_*) -> modern names.
+
+    Legacy sensor '59' -> 's060'; 'miss_clq14' -> 'f_miss_clq14'; modern
+    s-/f- names pass through. Unknown strings pass through unchanged.
+    """
+    name = str(name)
+    if name.startswith((schema.SENSOR_PREFIX, "f_")):
+        return name
+    if name.isdigit():
+        return f"{schema.SENSOR_PREFIX}{int(name) + 1:03d}"
+    if name.startswith("miss_") or name == "row_missing_rate":
+        return f"f_{name}"
+    return name
+
+
+def raw_sensor_columns(df: pd.DataFrame) -> list[str]:
+    """All raw sensor columns (sNNN) in the frame - the full monitoring net.
+
+    Registry-free by design: screening covers sensors the value pipeline
+    retired (constants, high-NaN), because monitoring exists for the channels
+    the model never sees.
+    """
+    return [c for c in df.columns
+            if c.startswith(schema.SENSOR_PREFIX)
+            and c[len(schema.SENSOR_PREFIX):].isdigit()]
+
+
+def add_protocol_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute the four engineered protocol columns on the raw frame.
+
+    extract() delivers raw channels only. Membership comes from config.py;
+    each list is intersected with the frame and asserted non-empty, so a
+    schema drift fails loudly instead of charting nonsense.
+    """
+    sensors = raw_sensor_columns(df)
+    df["f_row_missing_rate"] = df[sensors].isna().mean(axis=1)
+
+    for col, members in [("f_miss_clq14", CLIQUE_14), ("f_miss_clq23", CLIQUE_23),
+                         ("f_miss_block5", BLOCK5)]:
+        present = [m for m in members if m in df.columns]
+        assert present, f"no members of {col} found in the frame"
+        df[col] = df[present].isna().any(axis=1).astype("int8")
+        logger.info(f"protocol {col}: {len(present)} members, "
+                    f"rate {df[col].mean():.3f}")
+    return df
+
 
 # ---------------------------------------------------------------- data
 
-def load_data(holdout_n: int, tail_n: int) -> tuple[pd.DataFrame, int, int]:
-    """Load, sort ONCE, slice positionally. Returns (df, i_hold, i_tail).
 
-    The exploration prototype sorted the concat but sliced the unsorted dfy,
-    misaligning every x-axis; here everything shares one sorted positional index.
+def load_data(holdout_n: int, tail_n: int,
+              snap_config: dict) -> tuple[pd.DataFrame, int, int, dict, str]:
+    """Wide frame from SQLite, sorted ONCE, sliced positionally.
+
+    Returns (df, i_hold, i_tail, fingerprint, snapshot_id). The target is
+    recoded from raw -1/1 to 0/1 (rates and fail markers assume 0/1), schema
+    columns are aliased to timestamp/target, and the protocol features are
+    computed on the raw frame. The gold snapshot records exactly the frame
+    SPC consumes; data_fingerprint is taken on the database itself.
     """
-    dfX = pd.read_parquet(DATA_PROCESSED / "dfX_v2.parquet")
-    dfy = pd.read_parquet(DATA_PROCESSED / "dfy_v1.parquet")
-    ycols = ["target"] if "timestamp" in dfX.columns else ["timestamp", "target"]
-    df = (pd.concat([dfX, dfy[ycols]], axis=1)
-            .sort_values("timestamp").reset_index(drop=True))
-    df.columns = df.columns.map(str)
+    engine = get_engine()
+    df = extract(engine).sort_values(schema.TIME_COL).reset_index(drop=True)
+    fp = data_fingerprint(engine)  # dict: raw table hashes + extract SQL hash
+
+    df = df.rename(columns={schema.TIME_COL: "timestamp",
+                            schema.TARGET_COL: "target"})
+    df["target"] = df["target"].eq(1).astype("int8")  # raw -1/1 -> 0/1
+    df = add_protocol_features(df)
+
+    snapshot_id = write_gold_snapshot(df, engine, config=snap_config)
+
     n = len(df)
     i_hold = n - tail_n - holdout_n
     i_tail = n - tail_n
     logger.info(f"SPC data: {n} rows | phase I [0:{i_hold}] "
-                f"holdout [{i_hold}:{i_tail}] tail [{i_tail}:{n}]")
-    return df, i_hold, i_tail
-
-
-def sensor_columns(df: pd.DataFrame) -> list[str]:
-    return [c for c in df.columns if c not in META and c not in ENGINEERED]
+                f"holdout [{i_hold}:{i_tail}] tail [{i_tail}:{n}] | "
+                f"fingerprint {fp} | snapshot {snapshot_id}")
+    return df, i_hold, i_tail, fp, snapshot_id
 
 
 # ---------------------------------------------------------------- limits & statistics
+
 
 def moving_range(s: pd.Series) -> pd.Series:
     """MR computed on the full sorted series: continuity across phase boundaries."""
@@ -151,7 +228,7 @@ def screening(df: pd.DataFrame, cols: list[str], limits: pd.DataFrame,
         rec["delta"] = rec["ooc_p2"] - rec["ooc_p1"]
         rec["ewma_delta"] = rec["ewma_p2"] - rec["ewma_p1"]
         rows[col] = rec
-        out = pd.DataFrame(rows).T
+    out = pd.DataFrame(rows).T
     out.index = out.index.map(str)
     num = [c for c in out.columns if c != "degenerate"]
     out[num] = out[num].apply(pd.to_numeric)
@@ -209,12 +286,14 @@ def windowed_rate(s: pd.Series, window: int) -> pd.DataFrame:
 
 # ---------------------------------------------------------------- selection
 
+
 def load_stable_set(path: str | None, min_freq: float) -> set[str]:
     """Stable features from a selection run's features.json (or csv/parquet).
 
     Accepts {name: freq}, the same nested under 'stability'/'sel_count', a plain
     list, or a table with a frequency column. Values > 1.5 are treated as counts
-    and normalized by their max. Falls back to DEFAULT_STABLE.
+    and normalized by their max. Legacy names are mapped via _current_name.
+    Falls back to DEFAULT_STABLE.
     """
     if path is None:
         return set(DEFAULT_STABLE)
@@ -227,7 +306,7 @@ def load_stable_set(path: str | None, min_freq: float) -> set[str]:
                     obj = obj[key]
                     break
             if isinstance(obj, list):
-                return set(map(str, obj))
+                return {_current_name(f) for f in obj}
             vals = {str(k): float(v) for k, v in obj.items()}
         else:
             t = (pd.read_parquet(p) if p.suffix == ".parquet"
@@ -236,7 +315,7 @@ def load_stable_set(path: str | None, min_freq: float) -> set[str]:
             vals = {str(i): float(v) for i, v in t[col].items()}
         mx = max(vals.values())
         scale = mx if mx > 1.5 else 1.0
-        return {k for k, v in vals.items() if v / scale >= min_freq}
+        return {_current_name(k) for k, v in vals.items() if v / scale >= min_freq}
     except Exception as e:
         logger.warning(f"could not parse stable set from {p} ({e}); using DEFAULT_STABLE")
         return set(DEFAULT_STABLE)
@@ -265,7 +344,11 @@ def select_showcase(screen: pd.DataFrame, stable: set[str], delta_min: float,
 
 
 def load_master_notes(path: str | None) -> dict[str, str]:
-    """Optional EDA master table -> per-feature annotation for chart titles."""
+    """Optional EDA master table -> per-feature annotation for chart titles.
+
+    The master table may be indexed by legacy integers (the EDA notebook
+    presents the legacy view); keys are mapped via _current_name.
+    """
     if not path:
         return {}
     p = Path(path)
@@ -273,7 +356,7 @@ def load_master_notes(path: str | None) -> dict[str, str]:
         logger.warning(f"master table not found: {p}")
         return {}
     m = pd.read_parquet(p) if p.suffix == ".parquet" else pd.read_csv(p, index_col=0)
-    m.index = m.index.map(str)
+    m.index = [_current_name(i) for i in m.index.map(str)]
     notes = {}
     for f in m.index:
         bits = []
@@ -287,6 +370,7 @@ def load_master_notes(path: str | None) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------- figures
+
 
 def plot_overview(screen: pd.DataFrame, stable: set[str], out_png: Path) -> None:
     s = screen[~screen["degenerate"] & screen["delta"].notna()]
@@ -366,7 +450,7 @@ def plot_protocol(df: pd.DataFrame, i_hold: int, i_tail: int, window: int,
                   out_dir: Path) -> None:
     # (a) per-wafer missingness across the raw 590: the NaN-explosion exhibit.
     # The values layer looks calm at the tail; this protocol layer should scream.
-    col = "row_missing_rate"
+    col = "f_row_missing_rate"
     lim = compute_limits(df[[col]].iloc[:i_hold], method="robust").loc[col]
     x = df[col]
     t = np.arange(len(df))
@@ -377,8 +461,8 @@ def plot_protocol(df: pd.DataFrame, i_hold: int, i_tail: int, window: int,
         ax.axhline(y, color=c, ls="--" if c == "r" else "-", lw=1, label=lb)
     for b in (i_hold, i_tail):
         ax.axvline(b, color="k", ls=":", lw=1)
-    ax.set_title("row_missing_rate (fraction of the raw 590 channels unmeasured)"
-                     " - protocol drift, not process drift")
+    ax.set_title("f_row_missing_rate (fraction of the raw 590 channels unmeasured)"
+                 " - protocol drift, not process drift")
     ax.legend(fontsize=8)
     fig.tight_layout()
     fig.savefig(out_dir / "protocol_row_missing_rate.png", dpi=180)
@@ -433,6 +517,7 @@ def plot_pchart(df: pd.DataFrame, i_hold: int, i_tail: int, window: int,
 
 # ---------------------------------------------------------------- run registry seam
 
+
 def _start_run(tag: str, config: dict, note: str = "") -> Path:
     """Run folder via tracking.make_run (writes config.json itself)."""
     run_dir, meta = tracking.make_run(config=config, run_name=tag, note=note)
@@ -442,6 +527,7 @@ def _start_run(tag: str, config: dict, note: str = "") -> Path:
 
 # ---------------------------------------------------------------- cli
 
+
 def parse_args(argv=None):
     p = argparse.ArgumentParser(
         description="SECOM SPC: Phase-I/II screening + showcase charts")
@@ -449,6 +535,7 @@ def parse_args(argv=None):
     p.add_argument("--k", type=float, default=3.0)
     p.add_argument("--stable-from", default=None,
                    help="features.json/csv/parquet from a selection run; "
+                        "legacy and modern names both accepted; "
                         "default = hardcoded 100%-stable sensors")
     p.add_argument("--stable-min", type=float, default=0.8)
     p.add_argument("--delta-min", type=float, default=0.05,
@@ -468,8 +555,14 @@ def main(argv=None):
     logger.info(f"[spc.py] start | limits={args.limits} k={args.k} "
                 f"window={args.window} note={args.note}")
     cfg = load_config()
-    df, i_hold, i_tail = load_data(cfg.pipeline.holdout_n, cfg.pipeline.tail_n)
-    cols = sensor_columns(df)
+
+    snap_config = {"holdout_n": cfg.pipeline.holdout_n,
+                   "tail_n": cfg.pipeline.tail_n,
+                   "limits": args.limits, "k": args.k,
+                   "ewma_lam": args.ewma_lam, "window": args.window}
+    df, i_hold, i_tail, fp, snapshot_id = load_data(
+        cfg.pipeline.holdout_n, cfg.pipeline.tail_n, snap_config)
+    cols = raw_sensor_columns(df)  # all raw sensors: the monitoring net
 
     run = _start_run("spc", config={**vars(args), "i_hold": i_hold,
                                     "i_tail": i_tail, "n_sensors": len(cols)},
@@ -504,18 +597,17 @@ def main(argv=None):
         "median_ooc_p1": round(float(screen["ooc_p1"].median()), 4),
         "max_delta": round(float(screen["delta"].max()), 4),
         "n_drift": int((screen["delta"] >= args.delta_min).sum()),
-        }, 
+        "data": fp["raw"]["secom.data"][:16],  # values-matrix hash, 16-char
+        "snapshot_id": snapshot_id,
+        },
         index_file=ARTIFACTS / "index_monitor.csv")
     logger.info(f"[spc.py] done | artifacts -> {run}")
 
 
 def _in_ipykernel() -> bool:
-    try:
-        from IPython import get_ipython
-        shell = get_ipython()
-        return shell is not None and "IPKernelApp" in getattr(shell, "config", {})
-    except Exception:
-        return False
+    """True under a Jupyter kernel, without importing IPython (which the
+    project venv need not carry)."""
+    return "ipykernel" in sys.modules
 
 
 if __name__ == "__main__" and not _in_ipykernel():
