@@ -1,0 +1,24 @@
+{
+  "snapshot_id": "20260901_132240_88c8d9c5",
+  "layer": "gold",
+  "created": "2026-09-01T13:22:40.786034+00:00",
+  "rows": 1567,
+  "cols": 594,
+  "git_sha": "8c15dbe55f4550997ee959517fdd2257ee059951",
+  "config": {
+    "holdout_n": 231,
+    "tail_n": 27,
+    "limits": "robust",
+    "k": 3.0,
+    "ewma_lam": 0.2,
+    "window": 50
+  },
+  "fingerprint": {
+    "raw": {
+      "secom_labels.data": "126884cf453705c9e61a903fe906f0665a3b45ce3639e621edc5c93c89627e03",
+      "secom.data": "20f0e7ee434f7dcbae0eea9ffff009a2b57f42d6b0dc9a5bd4f00782c0a3374c"
+    },
+    "extract_sql_sha256": "1e09d3fc7675fe072d55bc3457c134070434642cb73dad350b94377511b516ac"
+  },
+  "parquet_sha256": "88c8d9c53b3677863a3fca8b2cd52f41b9efdc949ec7c7eda3eef864a3e69c6d"
+}

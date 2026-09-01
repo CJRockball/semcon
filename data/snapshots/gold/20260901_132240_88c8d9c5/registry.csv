@@ -1,0 +1,599 @@
+column_name,role,status,col_index,missing_pct,derived_from,notes
+wafer_id,key,active,0.0,0.0,,row order in raw file is chronological
+target,target,active,,0.0,,raw -1/1; encode downstream
+timestamp,metadata,active,,0.0,,
+s001,feature_raw,active,1.0,0.0038289725590299937,,
+s002,feature_raw,active,2.0,0.004467134652201659,,
+s003,feature_raw,active,3.0,0.008934269304403318,,
+s004,feature_raw,active,4.0,0.008934269304403318,,
+s005,feature_raw,excluded,5.0,0.008934269304403318,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s006,feature_raw,excluded,6.0,0.008934269304403318,,constant: n_unique == 1
+s007,feature_raw,active,7.0,0.008934269304403318,,
+s008,feature_raw,active,8.0,0.00574345883854499,,
+s009,feature_raw,active,9.0,0.0012763241863433313,,
+s010,feature_raw,active,10.0,0.0012763241863433313,,
+s011,feature_raw,active,11.0,0.0012763241863433313,,
+s012,feature_raw,active,12.0,0.0012763241863433313,,
+s013,feature_raw,active,13.0,0.0012763241863433313,,
+s014,feature_raw,excluded,14.0,0.0019144862795149968,,constant: n_unique == 1
+s015,feature_raw,active,15.0,0.0019144862795149968,,
+s016,feature_raw,active,16.0,0.0019144862795149968,,
+s017,feature_raw,excluded,17.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s018,feature_raw,active,18.0,0.0019144862795149968,,
+s019,feature_raw,active,19.0,0.0019144862795149968,,
+s020,feature_raw,active,20.0,0.006381620931716656,,
+s021,feature_raw,active,21.0,0.0,,
+s022,feature_raw,active,22.0,0.0012763241863433313,,
+s023,feature_raw,active,23.0,0.0012763241863433313,,
+s024,feature_raw,active,24.0,0.0012763241863433313,,
+s025,feature_raw,active,25.0,0.0012763241863433313,,
+s026,feature_raw,excluded,26.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s027,feature_raw,active,27.0,0.0012763241863433313,,
+s028,feature_raw,active,28.0,0.0012763241863433313,,
+s029,feature_raw,active,29.0,0.0012763241863433313,,
+s030,feature_raw,active,30.0,0.0012763241863433313,,
+s031,feature_raw,active,31.0,0.0012763241863433313,,
+s032,feature_raw,active,32.0,0.0012763241863433313,,
+s033,feature_raw,active,33.0,0.0006381620931716656,,
+s034,feature_raw,active,34.0,0.0006381620931716656,,
+s035,feature_raw,excluded,35.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s036,feature_raw,active,36.0,0.0006381620931716656,,
+s037,feature_raw,active,37.0,0.0006381620931716656,,
+s038,feature_raw,excluded,38.0,0.0006381620931716656,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s039,feature_raw,excluded,39.0,0.0006381620931716656,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s040,feature_raw,active,40.0,0.0006381620931716656,,
+s041,feature_raw,active,41.0,0.015315890236119975,,
+s042,feature_raw,active,42.0,0.015315890236119975,,
+s043,feature_raw,excluded,43.0,0.0006381620931716656,,constant: n_unique == 1
+s044,feature_raw,active,44.0,0.0006381620931716656,,
+s045,feature_raw,active,45.0,0.0006381620931716656,,
+s046,feature_raw,active,46.0,0.0006381620931716656,,
+s047,feature_raw,active,47.0,0.0006381620931716656,,
+s048,feature_raw,active,48.0,0.0006381620931716656,,
+s049,feature_raw,active,49.0,0.0006381620931716656,,
+s050,feature_raw,excluded,50.0,0.0006381620931716656,,constant: n_unique == 1
+s051,feature_raw,active,51.0,0.0006381620931716656,,
+s052,feature_raw,active,52.0,0.0006381620931716656,,
+s053,feature_raw,excluded,53.0,0.0006381620931716656,,constant: n_unique == 1
+s054,feature_raw,active,54.0,0.0025526483726866626,,
+s055,feature_raw,active,55.0,0.0025526483726866626,,
+s056,feature_raw,excluded,56.0,0.0025526483726866626,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s057,feature_raw,excluded,57.0,0.0025526483726866626,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s058,feature_raw,excluded,58.0,0.0025526483726866626,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s059,feature_raw,active,59.0,0.0025526483726866626,,
+s060,feature_raw,active,60.0,0.004467134652201659,,
+s061,feature_raw,active,61.0,0.0038289725590299937,,
+s062,feature_raw,active,62.0,0.0038289725590299937,,
+s063,feature_raw,active,63.0,0.0038289725590299937,,
+s064,feature_raw,active,64.0,0.004467134652201659,,
+s065,feature_raw,active,65.0,0.004467134652201659,,
+s066,feature_raw,active,66.0,0.004467134652201659,,
+s067,feature_raw,active,67.0,0.0038289725590299937,,
+s068,feature_raw,active,68.0,0.0038289725590299937,,
+s069,feature_raw,active,69.0,0.0038289725590299937,,
+s070,feature_raw,excluded,70.0,0.0038289725590299937,,constant: n_unique == 1
+s071,feature_raw,active,71.0,0.0038289725590299937,,
+s072,feature_raw,active,72.0,0.0038289725590299937,,
+s073,feature_raw,excluded,73.0,0.5067007019783025,,missing: NaN fraction > 0.5
+s074,feature_raw,excluded,74.0,0.5067007019783025,,missing: NaN fraction > 0.5
+s075,feature_raw,excluded,75.0,0.0038289725590299937,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s076,feature_raw,active,76.0,0.015315890236119975,,
+s077,feature_raw,active,77.0,0.015315890236119975,,
+s078,feature_raw,active,78.0,0.015315890236119975,,
+s079,feature_raw,active,79.0,0.015315890236119975,,
+s080,feature_raw,active,80.0,0.015315890236119975,,
+s081,feature_raw,active,81.0,0.015315890236119975,,
+s082,feature_raw,active,82.0,0.015315890236119975,,
+s083,feature_raw,active,83.0,0.015315890236119975,,
+s084,feature_raw,active,84.0,0.0006381620931716656,,
+s085,feature_raw,active,85.0,0.007657945118059987,,
+s086,feature_raw,excluded,86.0,0.8557753669432036,,missing: NaN fraction > 0.5
+s087,feature_raw,active,87.0,0.0,,
+s088,feature_raw,active,88.0,0.0,,
+s089,feature_raw,active,89.0,0.0,,
+s090,feature_raw,active,90.0,0.03254626675175495,,
+s091,feature_raw,active,91.0,0.03254626675175495,,
+s092,feature_raw,active,92.0,0.0038289725590299937,,
+s093,feature_raw,active,93.0,0.0012763241863433313,,
+s094,feature_raw,active,94.0,0.0012763241863433313,,
+s095,feature_raw,excluded,95.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s096,feature_raw,active,96.0,0.0038289725590299937,,
+s097,feature_raw,active,97.0,0.0038289725590299937,,
+s098,feature_raw,excluded,98.0,0.0038289725590299937,,constant: n_unique == 1
+s099,feature_raw,active,99.0,0.0038289725590299937,,
+s100,feature_raw,excluded,100.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s101,feature_raw,active,101.0,0.0038289725590299937,,
+s102,feature_raw,active,102.0,0.0038289725590299937,,
+s103,feature_raw,active,103.0,0.0038289725590299937,,
+s104,feature_raw,active,104.0,0.0012763241863433313,,
+s105,feature_raw,active,105.0,0.0012763241863433313,,
+s106,feature_raw,excluded,106.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s107,feature_raw,excluded,107.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s108,feature_raw,active,108.0,0.0038289725590299937,,
+s109,feature_raw,active,109.0,0.0038289725590299937,,
+s110,feature_raw,excluded,110.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s111,feature_raw,excluded,111.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s112,feature_raw,excluded,112.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s113,feature_raw,active,113.0,0.4562858966177409,,
+s114,feature_raw,active,114.0,0.0,,
+s115,feature_raw,excluded,115.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s116,feature_raw,active,116.0,0.0,,
+s117,feature_raw,excluded,117.0,0.0,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s118,feature_raw,excluded,118.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s119,feature_raw,active,119.0,0.015315890236119975,,
+s120,feature_raw,excluded,120.0,0.0,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s121,feature_raw,active,121.0,0.0,,
+s122,feature_raw,excluded,122.0,0.00574345883854499,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s123,feature_raw,excluded,123.0,0.00574345883854499,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s124,feature_raw,excluded,124.0,0.00574345883854499,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s125,feature_raw,excluded,125.0,0.00574345883854499,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s126,feature_raw,active,126.0,0.00574345883854499,,
+s127,feature_raw,active,127.0,0.00574345883854499,,
+s128,feature_raw,active,128.0,0.00574345883854499,,
+s129,feature_raw,active,129.0,0.00574345883854499,,
+s130,feature_raw,active,130.0,0.00574345883854499,,
+s131,feature_raw,active,131.0,0.00574345883854499,,
+s132,feature_raw,excluded,132.0,0.00574345883854499,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s133,feature_raw,active,133.0,0.005105296745373325,,
+s134,feature_raw,excluded,134.0,0.005105296745373325,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s135,feature_raw,active,135.0,0.005105296745373325,,
+s136,feature_raw,excluded,136.0,0.003190810465858328,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s137,feature_raw,excluded,137.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s138,feature_raw,excluded,138.0,0.004467134652201659,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s139,feature_raw,excluded,139.0,0.008934269304403318,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s140,feature_raw,excluded,140.0,0.008934269304403318,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s141,feature_raw,excluded,141.0,0.008934269304403318,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s142,feature_raw,excluded,142.0,0.008934269304403318,,constant: n_unique == 1
+s143,feature_raw,excluded,143.0,0.008934269304403318,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s144,feature_raw,excluded,144.0,0.00574345883854499,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s145,feature_raw,excluded,145.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s146,feature_raw,excluded,146.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s147,feature_raw,excluded,147.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s148,feature_raw,excluded,148.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s149,feature_raw,excluded,149.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s150,feature_raw,excluded,150.0,0.0019144862795149968,,constant: n_unique == 1
+s151,feature_raw,excluded,151.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s152,feature_raw,excluded,152.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s153,feature_raw,excluded,153.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s154,feature_raw,excluded,154.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s155,feature_raw,excluded,155.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s156,feature_raw,excluded,156.0,0.006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s157,feature_raw,excluded,157.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s158,feature_raw,excluded,158.0,0.9119336311423102,,missing: NaN fraction > 0.5
+s159,feature_raw,excluded,159.0,0.9119336311423102,,missing: NaN fraction > 0.5
+s160,feature_raw,excluded,160.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s161,feature_raw,excluded,161.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s162,feature_raw,excluded,162.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s163,feature_raw,excluded,163.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s164,feature_raw,excluded,164.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s165,feature_raw,excluded,165.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s166,feature_raw,excluded,166.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s167,feature_raw,excluded,167.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s168,feature_raw,excluded,168.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s169,feature_raw,excluded,169.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s170,feature_raw,excluded,170.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s171,feature_raw,excluded,171.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s172,feature_raw,excluded,172.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s173,feature_raw,excluded,173.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s174,feature_raw,excluded,174.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s175,feature_raw,excluded,175.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s176,feature_raw,excluded,176.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s177,feature_raw,excluded,177.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s178,feature_raw,excluded,178.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s179,feature_raw,excluded,179.0,0.015315890236119975,,constant: n_unique == 1
+s180,feature_raw,excluded,180.0,0.0006381620931716656,,constant: n_unique == 1
+s181,feature_raw,excluded,181.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s182,feature_raw,excluded,182.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s183,feature_raw,excluded,183.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s184,feature_raw,excluded,184.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s185,feature_raw,excluded,185.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s186,feature_raw,excluded,186.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s187,feature_raw,excluded,187.0,0.0006381620931716656,,constant: n_unique == 1
+s188,feature_raw,excluded,188.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s189,feature_raw,excluded,189.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s190,feature_raw,excluded,190.0,0.0006381620931716656,,constant: n_unique == 1
+s191,feature_raw,excluded,191.0,0.0025526483726866626,,constant: n_unique == 1
+s192,feature_raw,excluded,192.0,0.0025526483726866626,,constant: n_unique == 1
+s193,feature_raw,excluded,193.0,0.0025526483726866626,,constant: n_unique == 1
+s194,feature_raw,excluded,194.0,0.0025526483726866626,,constant: n_unique == 1
+s195,feature_raw,excluded,195.0,0.0025526483726866626,,constant: n_unique == 1
+s196,feature_raw,excluded,196.0,0.0025526483726866626,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s197,feature_raw,excluded,197.0,0.004467134652201659,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s198,feature_raw,excluded,198.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s199,feature_raw,excluded,199.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s200,feature_raw,excluded,200.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s201,feature_raw,active,201.0,0.004467134652201659,,
+s202,feature_raw,active,202.0,0.004467134652201659,,
+s203,feature_raw,excluded,203.0,0.004467134652201659,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s204,feature_raw,excluded,204.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s205,feature_raw,excluded,205.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s206,feature_raw,excluded,206.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s207,feature_raw,excluded,207.0,0.0038289725590299937,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s208,feature_raw,excluded,208.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s209,feature_raw,excluded,209.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s210,feature_raw,excluded,210.0,0.0038289725590299937,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s211,feature_raw,active,211.0,0.015315890236119975,,
+s212,feature_raw,excluded,212.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s213,feature_raw,excluded,213.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s214,feature_raw,excluded,214.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s215,feature_raw,excluded,215.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s216,feature_raw,excluded,216.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s217,feature_raw,excluded,217.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s218,feature_raw,excluded,218.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s219,feature_raw,excluded,219.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s220,feature_raw,excluded,220.0,0.007657945118059987,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s221,feature_raw,excluded,221.0,0.8557753669432036,,missing: NaN fraction > 0.5
+s222,feature_raw,excluded,222.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s223,feature_raw,excluded,223.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s224,feature_raw,excluded,224.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s225,feature_raw,excluded,225.0,0.03254626675175495,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s226,feature_raw,excluded,226.0,0.03254626675175495,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s227,feature_raw,excluded,227.0,0.0038289725590299937,,constant: n_unique == 1
+s228,feature_raw,excluded,228.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s229,feature_raw,excluded,229.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s230,feature_raw,excluded,230.0,0.0038289725590299937,,constant: n_unique == 1
+s231,feature_raw,excluded,231.0,0.0038289725590299937,,constant: n_unique == 1
+s232,feature_raw,excluded,232.0,0.0038289725590299937,,constant: n_unique == 1
+s233,feature_raw,excluded,233.0,0.0038289725590299937,,constant: n_unique == 1
+s234,feature_raw,excluded,234.0,0.0038289725590299937,,constant: n_unique == 1
+s235,feature_raw,excluded,235.0,0.0038289725590299937,,constant: n_unique == 1
+s236,feature_raw,excluded,236.0,0.0038289725590299937,,constant: n_unique == 1
+s237,feature_raw,excluded,237.0,0.0038289725590299937,,constant: n_unique == 1
+s238,feature_raw,excluded,238.0,0.0038289725590299937,,constant: n_unique == 1
+s239,feature_raw,excluded,239.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s240,feature_raw,excluded,240.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s241,feature_raw,excluded,241.0,0.0038289725590299937,,constant: n_unique == 1
+s242,feature_raw,excluded,242.0,0.0038289725590299937,,constant: n_unique == 1
+s243,feature_raw,excluded,243.0,0.0038289725590299937,,constant: n_unique == 1
+s244,feature_raw,excluded,244.0,0.0038289725590299937,,constant: n_unique == 1
+s245,feature_raw,excluded,245.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s246,feature_raw,excluded,246.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s247,feature_raw,excluded,247.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s248,feature_raw,excluded,248.0,0.4562858966177409,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s249,feature_raw,excluded,249.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s250,feature_raw,excluded,250.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s251,feature_raw,excluded,251.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s252,feature_raw,excluded,252.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s253,feature_raw,excluded,253.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s254,feature_raw,excluded,254.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s255,feature_raw,excluded,255.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s256,feature_raw,excluded,256.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s257,feature_raw,excluded,257.0,0.00574345883854499,,constant: n_unique == 1
+s258,feature_raw,excluded,258.0,0.00574345883854499,,constant: n_unique == 1
+s259,feature_raw,excluded,259.0,0.00574345883854499,,constant: n_unique == 1
+s260,feature_raw,excluded,260.0,0.00574345883854499,,constant: n_unique == 1
+s261,feature_raw,excluded,261.0,0.00574345883854499,,constant: n_unique == 1
+s262,feature_raw,excluded,262.0,0.00574345883854499,,constant: n_unique == 1
+s263,feature_raw,excluded,263.0,0.00574345883854499,,constant: n_unique == 1
+s264,feature_raw,excluded,264.0,0.00574345883854499,,constant: n_unique == 1
+s265,feature_raw,excluded,265.0,0.00574345883854499,,constant: n_unique == 1
+s266,feature_raw,excluded,266.0,0.00574345883854499,,constant: n_unique == 1
+s267,feature_raw,excluded,267.0,0.00574345883854499,,constant: n_unique == 1
+s268,feature_raw,excluded,268.0,0.005105296745373325,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s269,feature_raw,excluded,269.0,0.005105296745373325,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s270,feature_raw,excluded,270.0,0.005105296745373325,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s271,feature_raw,active,271.0,0.003190810465858328,,
+s272,feature_raw,excluded,272.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s273,feature_raw,excluded,273.0,0.004467134652201659,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s274,feature_raw,active,274.0,0.008934269304403318,,
+s275,feature_raw,active,275.0,0.008934269304403318,,
+s276,feature_raw,active,276.0,0.008934269304403318,,
+s277,feature_raw,excluded,277.0,0.008934269304403318,,constant: n_unique == 1
+s278,feature_raw,excluded,278.0,0.008934269304403318,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s279,feature_raw,active,279.0,0.00574345883854499,,
+s280,feature_raw,excluded,280.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s281,feature_raw,active,281.0,0.0012763241863433313,,
+s282,feature_raw,active,282.0,0.0012763241863433313,,
+s283,feature_raw,excluded,283.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s284,feature_raw,excluded,284.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s285,feature_raw,excluded,285.0,0.0019144862795149968,,constant: n_unique == 1
+s286,feature_raw,active,286.0,0.0019144862795149968,,
+s287,feature_raw,excluded,287.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s288,feature_raw,excluded,288.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s289,feature_raw,excluded,289.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s290,feature_raw,excluded,290.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s291,feature_raw,excluded,291.0,0.006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s292,feature_raw,excluded,292.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s293,feature_raw,excluded,293.0,0.9119336311423102,,missing: NaN fraction > 0.5
+s294,feature_raw,excluded,294.0,0.9119336311423102,,missing: NaN fraction > 0.5
+s295,feature_raw,active,295.0,0.0012763241863433313,,
+s296,feature_raw,active,296.0,0.0012763241863433313,,
+s297,feature_raw,active,297.0,0.0012763241863433313,,
+s298,feature_raw,active,298.0,0.0012763241863433313,,
+s299,feature_raw,active,299.0,0.0012763241863433313,,
+s300,feature_raw,excluded,300.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s301,feature_raw,active,301.0,0.0012763241863433313,,
+s302,feature_raw,active,302.0,0.0012763241863433313,,
+s303,feature_raw,active,303.0,0.0012763241863433313,,
+s304,feature_raw,active,304.0,0.0012763241863433313,,
+s305,feature_raw,excluded,305.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s306,feature_raw,excluded,306.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s307,feature_raw,excluded,307.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s308,feature_raw,excluded,308.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s309,feature_raw,excluded,309.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s310,feature_raw,excluded,310.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s311,feature_raw,excluded,311.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s312,feature_raw,excluded,312.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s313,feature_raw,excluded,313.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s314,feature_raw,excluded,314.0,0.015315890236119975,,constant: n_unique == 1
+s315,feature_raw,excluded,315.0,0.015315890236119975,,constant: n_unique == 1
+s316,feature_raw,excluded,316.0,0.0006381620931716656,,constant: n_unique == 1
+s317,feature_raw,active,317.0,0.0006381620931716656,,
+s318,feature_raw,excluded,318.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s319,feature_raw,excluded,319.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s320,feature_raw,excluded,320.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s321,feature_raw,excluded,321.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s322,feature_raw,excluded,322.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s323,feature_raw,excluded,323.0,0.0006381620931716656,,constant: n_unique == 1
+s324,feature_raw,excluded,324.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s325,feature_raw,active,325.0,0.0006381620931716656,,
+s326,feature_raw,excluded,326.0,0.0006381620931716656,,constant: n_unique == 1
+s327,feature_raw,excluded,327.0,0.0025526483726866626,,constant: n_unique == 1
+s328,feature_raw,excluded,328.0,0.0025526483726866626,,constant: n_unique == 1
+s329,feature_raw,excluded,329.0,0.0025526483726866626,,constant: n_unique == 1
+s330,feature_raw,excluded,330.0,0.0025526483726866626,,constant: n_unique == 1
+s331,feature_raw,excluded,331.0,0.0025526483726866626,,constant: n_unique == 1
+s332,feature_raw,excluded,332.0,0.0025526483726866626,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s333,feature_raw,excluded,333.0,0.004467134652201659,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s334,feature_raw,excluded,334.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s335,feature_raw,excluded,335.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s336,feature_raw,active,336.0,0.0038289725590299937,,
+s337,feature_raw,active,337.0,0.004467134652201659,,
+s338,feature_raw,active,338.0,0.004467134652201659,,
+s339,feature_raw,active,339.0,0.004467134652201659,,
+s340,feature_raw,excluded,340.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s341,feature_raw,active,341.0,0.0038289725590299937,,
+s342,feature_raw,excluded,342.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s343,feature_raw,excluded,343.0,0.0038289725590299937,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s344,feature_raw,excluded,344.0,0.0038289725590299937,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s345,feature_raw,active,345.0,0.0038289725590299937,,
+s346,feature_raw,excluded,346.0,0.5067007019783025,,missing: NaN fraction > 0.5
+s347,feature_raw,excluded,347.0,0.5067007019783025,,missing: NaN fraction > 0.5
+s348,feature_raw,excluded,348.0,0.0038289725590299937,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s349,feature_raw,active,349.0,0.015315890236119975,,
+s350,feature_raw,active,350.0,0.015315890236119975,,
+s351,feature_raw,active,351.0,0.015315890236119975,,
+s352,feature_raw,active,352.0,0.015315890236119975,,
+s353,feature_raw,active,353.0,0.015315890236119975,,
+s354,feature_raw,active,354.0,0.015315890236119975,,
+s355,feature_raw,active,355.0,0.015315890236119975,,
+s356,feature_raw,active,356.0,0.015315890236119975,,
+s357,feature_raw,active,357.0,0.0006381620931716656,,
+s358,feature_raw,excluded,358.0,0.007657945118059987,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s359,feature_raw,excluded,359.0,0.8557753669432036,,missing: NaN fraction > 0.5
+s360,feature_raw,excluded,360.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s361,feature_raw,excluded,361.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s362,feature_raw,excluded,362.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s363,feature_raw,active,363.0,0.03254626675175495,,
+s364,feature_raw,excluded,364.0,0.03254626675175495,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s365,feature_raw,excluded,365.0,0.0038289725590299937,,constant: n_unique == 1
+s366,feature_raw,active,366.0,0.0012763241863433313,,
+s367,feature_raw,active,367.0,0.0012763241863433313,,
+s368,feature_raw,active,368.0,0.0038289725590299937,,
+s369,feature_raw,active,369.0,0.0038289725590299937,,
+s370,feature_raw,excluded,370.0,0.0038289725590299937,,constant: n_unique == 1
+s371,feature_raw,excluded,371.0,0.0038289725590299937,,constant: n_unique == 1
+s372,feature_raw,excluded,372.0,0.0038289725590299937,,constant: n_unique == 1
+s373,feature_raw,excluded,373.0,0.0038289725590299937,,constant: n_unique == 1
+s374,feature_raw,excluded,374.0,0.0038289725590299937,,constant: n_unique == 1
+s375,feature_raw,excluded,375.0,0.0038289725590299937,,constant: n_unique == 1
+s376,feature_raw,excluded,376.0,0.0038289725590299937,,constant: n_unique == 1
+s377,feature_raw,active,377.0,0.0012763241863433313,,
+s378,feature_raw,active,378.0,0.0012763241863433313,,
+s379,feature_raw,excluded,379.0,0.0038289725590299937,,constant: n_unique == 1
+s380,feature_raw,excluded,380.0,0.0038289725590299937,,constant: n_unique == 1
+s381,feature_raw,excluded,381.0,0.0038289725590299937,,constant: n_unique == 1
+s382,feature_raw,excluded,382.0,0.0038289725590299937,,constant: n_unique == 1
+s383,feature_raw,excluded,383.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s384,feature_raw,excluded,384.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s385,feature_raw,excluded,385.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s386,feature_raw,active,386.0,0.4562858966177409,,
+s387,feature_raw,excluded,387.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s388,feature_raw,active,388.0,0.0,,
+s389,feature_raw,excluded,389.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s390,feature_raw,excluded,390.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s391,feature_raw,excluded,391.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s392,feature_raw,excluded,392.0,0.015315890236119975,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s393,feature_raw,excluded,393.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s394,feature_raw,excluded,394.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s395,feature_raw,excluded,395.0,0.00574345883854499,,constant: n_unique == 1
+s396,feature_raw,excluded,396.0,0.00574345883854499,,constant: n_unique == 1
+s397,feature_raw,excluded,397.0,0.00574345883854499,,constant: n_unique == 1
+s398,feature_raw,excluded,398.0,0.00574345883854499,,constant: n_unique == 1
+s399,feature_raw,excluded,399.0,0.00574345883854499,,constant: n_unique == 1
+s400,feature_raw,excluded,400.0,0.00574345883854499,,constant: n_unique == 1
+s401,feature_raw,excluded,401.0,0.00574345883854499,,constant: n_unique == 1
+s402,feature_raw,excluded,402.0,0.00574345883854499,,constant: n_unique == 1
+s403,feature_raw,excluded,403.0,0.00574345883854499,,constant: n_unique == 1
+s404,feature_raw,excluded,404.0,0.00574345883854499,,constant: n_unique == 1
+s405,feature_raw,excluded,405.0,0.00574345883854499,,constant: n_unique == 1
+s406,feature_raw,excluded,406.0,0.005105296745373325,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s407,feature_raw,excluded,407.0,0.005105296745373325,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s408,feature_raw,active,408.0,0.005105296745373325,,
+s409,feature_raw,active,409.0,0.003190810465858328,,
+s410,feature_raw,active,410.0,0.0038289725590299937,,
+s411,feature_raw,active,411.0,0.004467134652201659,,
+s412,feature_raw,active,412.0,0.008934269304403318,,
+s413,feature_raw,active,413.0,0.008934269304403318,,
+s414,feature_raw,active,414.0,0.008934269304403318,,
+s415,feature_raw,excluded,415.0,0.008934269304403318,,constant: n_unique == 1
+s416,feature_raw,active,416.0,0.008934269304403318,,
+s417,feature_raw,active,417.0,0.00574345883854499,,
+s418,feature_raw,active,418.0,0.0012763241863433313,,
+s419,feature_raw,active,419.0,0.0012763241863433313,,
+s420,feature_raw,active,420.0,0.0012763241863433313,,
+s421,feature_raw,active,421.0,0.0012763241863433313,,
+s422,feature_raw,active,422.0,0.0012763241863433313,,
+s423,feature_raw,excluded,423.0,0.0019144862795149968,,constant: n_unique == 1
+s424,feature_raw,active,424.0,0.0019144862795149968,,
+s425,feature_raw,active,425.0,0.0019144862795149968,,
+s426,feature_raw,excluded,426.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s427,feature_raw,active,427.0,0.0019144862795149968,,
+s428,feature_raw,excluded,428.0,0.0019144862795149968,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s429,feature_raw,active,429.0,0.006381620931716656,,
+s430,feature_raw,active,430.0,0.0,,
+s431,feature_raw,excluded,431.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s432,feature_raw,active,432.0,0.0012763241863433313,,
+s433,feature_raw,active,433.0,0.0012763241863433313,,
+s434,feature_raw,active,434.0,0.0012763241863433313,,
+s435,feature_raw,excluded,435.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s436,feature_raw,excluded,436.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s437,feature_raw,active,437.0,0.0012763241863433313,,
+s438,feature_raw,active,438.0,0.0012763241863433313,,
+s439,feature_raw,active,439.0,0.0012763241863433313,,
+s440,feature_raw,active,440.0,0.0012763241863433313,,
+s441,feature_raw,active,441.0,0.0012763241863433313,,
+s442,feature_raw,active,442.0,0.0006381620931716656,,
+s443,feature_raw,active,443.0,0.0006381620931716656,,
+s444,feature_raw,excluded,444.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s445,feature_raw,active,445.0,0.0006381620931716656,,
+s446,feature_raw,active,446.0,0.0006381620931716656,,
+s447,feature_raw,active,447.0,0.0006381620931716656,,
+s448,feature_raw,active,448.0,0.0006381620931716656,,
+s449,feature_raw,active,449.0,0.0006381620931716656,,
+s450,feature_raw,excluded,450.0,0.015315890236119975,,constant: n_unique == 1
+s451,feature_raw,excluded,451.0,0.015315890236119975,,constant: n_unique == 1
+s452,feature_raw,excluded,452.0,0.0006381620931716656,,constant: n_unique == 1
+s453,feature_raw,active,453.0,0.0006381620931716656,,
+s454,feature_raw,active,454.0,0.0006381620931716656,,
+s455,feature_raw,active,455.0,0.0006381620931716656,,
+s456,feature_raw,active,456.0,0.0006381620931716656,,
+s457,feature_raw,active,457.0,0.0006381620931716656,,
+s458,feature_raw,active,458.0,0.0006381620931716656,,
+s459,feature_raw,excluded,459.0,0.0006381620931716656,,constant: n_unique == 1
+s460,feature_raw,active,460.0,0.0006381620931716656,,
+s461,feature_raw,active,461.0,0.0006381620931716656,,
+s462,feature_raw,excluded,462.0,0.0006381620931716656,,constant: n_unique == 1
+s463,feature_raw,excluded,463.0,0.0025526483726866626,,constant: n_unique == 1
+s464,feature_raw,excluded,464.0,0.0025526483726866626,,constant: n_unique == 1
+s465,feature_raw,excluded,465.0,0.0025526483726866626,,constant: n_unique == 1
+s466,feature_raw,excluded,466.0,0.0025526483726866626,,constant: n_unique == 1
+s467,feature_raw,excluded,467.0,0.0025526483726866626,,constant: n_unique == 1
+s468,feature_raw,active,468.0,0.0025526483726866626,,
+s469,feature_raw,active,469.0,0.004467134652201659,,
+s470,feature_raw,active,470.0,0.0038289725590299937,,
+s471,feature_raw,active,471.0,0.0038289725590299937,,
+s472,feature_raw,active,472.0,0.0038289725590299937,,
+s473,feature_raw,active,473.0,0.004467134652201659,,
+s474,feature_raw,active,474.0,0.004467134652201659,,
+s475,feature_raw,active,475.0,0.004467134652201659,,
+s476,feature_raw,active,476.0,0.0038289725590299937,,
+s477,feature_raw,active,477.0,0.0038289725590299937,,
+s478,feature_raw,active,478.0,0.0038289725590299937,,
+s479,feature_raw,excluded,479.0,0.0038289725590299937,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s480,feature_raw,active,480.0,0.0038289725590299937,,
+s481,feature_raw,active,481.0,0.0038289725590299937,,
+s482,feature_raw,excluded,482.0,0.0038289725590299937,,constant: n_unique == 1
+s483,feature_raw,active,483.0,0.015315890236119975,,
+s484,feature_raw,active,484.0,0.015315890236119975,,
+s485,feature_raw,active,485.0,0.015315890236119975,,
+s486,feature_raw,active,486.0,0.015315890236119975,,
+s487,feature_raw,active,487.0,0.015315890236119975,,
+s488,feature_raw,active,488.0,0.015315890236119975,,
+s489,feature_raw,active,489.0,0.015315890236119975,,
+s490,feature_raw,active,490.0,0.015315890236119975,,
+s491,feature_raw,active,491.0,0.0006381620931716656,,
+s492,feature_raw,active,492.0,0.007657945118059987,,
+s493,feature_raw,excluded,493.0,0.8557753669432036,,missing: NaN fraction > 0.5
+s494,feature_raw,active,494.0,0.0,,
+s495,feature_raw,active,495.0,0.0,,
+s496,feature_raw,active,496.0,0.0,,
+s497,feature_raw,active,497.0,0.03254626675175495,,
+s498,feature_raw,active,498.0,0.03254626675175495,,
+s499,feature_raw,excluded,499.0,0.0038289725590299937,,constant: n_unique == 1
+s500,feature_raw,active,500.0,0.0012763241863433313,,
+s501,feature_raw,active,501.0,0.0012763241863433313,,
+s502,feature_raw,excluded,502.0,0.0038289725590299937,,constant: n_unique == 1
+s503,feature_raw,excluded,503.0,0.0038289725590299937,,constant: n_unique == 1
+s504,feature_raw,excluded,504.0,0.0038289725590299937,,constant: n_unique == 1
+s505,feature_raw,excluded,505.0,0.0038289725590299937,,constant: n_unique == 1
+s506,feature_raw,excluded,506.0,0.0038289725590299937,,constant: n_unique == 1
+s507,feature_raw,excluded,507.0,0.0038289725590299937,,constant: n_unique == 1
+s508,feature_raw,excluded,508.0,0.0038289725590299937,,constant: n_unique == 1
+s509,feature_raw,excluded,509.0,0.0038289725590299937,,constant: n_unique == 1
+s510,feature_raw,excluded,510.0,0.0038289725590299937,,constant: n_unique == 1
+s511,feature_raw,active,511.0,0.0012763241863433313,,
+s512,feature_raw,active,512.0,0.0012763241863433313,,
+s513,feature_raw,excluded,513.0,0.0038289725590299937,,constant: n_unique == 1
+s514,feature_raw,excluded,514.0,0.0038289725590299937,,constant: n_unique == 1
+s515,feature_raw,excluded,515.0,0.0038289725590299937,,constant: n_unique == 1
+s516,feature_raw,excluded,516.0,0.0038289725590299937,,constant: n_unique == 1
+s517,feature_raw,excluded,517.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s518,feature_raw,excluded,518.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s519,feature_raw,excluded,519.0,0.6496490108487556,,missing: NaN fraction > 0.5
+s520,feature_raw,active,520.0,0.4562858966177409,,
+s521,feature_raw,active,521.0,0.0,,
+s522,feature_raw,active,522.0,0.0,,
+s523,feature_raw,active,523.0,0.0,,
+s524,feature_raw,active,524.0,0.0,,
+s525,feature_raw,active,525.0,0.0,,
+s526,feature_raw,active,526.0,0.015315890236119975,,
+s527,feature_raw,active,527.0,0.0,,
+s528,feature_raw,active,528.0,0.0,,
+s529,feature_raw,excluded,529.0,0.00574345883854499,,constant: n_unique == 1
+s530,feature_raw,excluded,530.0,0.00574345883854499,,constant: n_unique == 1
+s531,feature_raw,excluded,531.0,0.00574345883854499,,constant: n_unique == 1
+s532,feature_raw,excluded,532.0,0.00574345883854499,,constant: n_unique == 1
+s533,feature_raw,excluded,533.0,0.00574345883854499,,constant: n_unique == 1
+s534,feature_raw,excluded,534.0,0.00574345883854499,,constant: n_unique == 1
+s535,feature_raw,excluded,535.0,0.00574345883854499,,constant: n_unique == 1
+s536,feature_raw,excluded,536.0,0.00574345883854499,,constant: n_unique == 1
+s537,feature_raw,excluded,537.0,0.00574345883854499,,constant: n_unique == 1
+s538,feature_raw,excluded,538.0,0.00574345883854499,,constant: n_unique == 1
+s539,feature_raw,excluded,539.0,0.00574345883854499,,constant: n_unique == 1
+s540,feature_raw,active,540.0,0.005105296745373325,,
+s541,feature_raw,active,541.0,0.005105296745373325,,
+s542,feature_raw,active,542.0,0.005105296745373325,,
+s543,feature_raw,active,543.0,0.0012763241863433313,,
+s544,feature_raw,excluded,544.0,0.0012763241863433313,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s545,feature_raw,active,545.0,0.0012763241863433313,,
+s546,feature_raw,active,546.0,0.0012763241863433313,,
+s547,feature_raw,active,547.0,0.16592214422463306,,
+s548,feature_raw,active,548.0,0.16592214422463306,,
+s549,feature_raw,active,549.0,0.16592214422463306,,
+s550,feature_raw,excluded,550.0,0.16592214422463306,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s551,feature_raw,excluded,551.0,0.16592214422463306,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s552,feature_raw,excluded,552.0,0.16592214422463306,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s553,feature_raw,active,553.0,0.16592214422463306,,
+s554,feature_raw,excluded,554.0,0.16592214422463306,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s555,feature_raw,excluded,555.0,0.16592214422463306,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s556,feature_raw,active,556.0,0.16592214422463306,,
+s557,feature_raw,active,557.0,0.16592214422463306,,
+s558,feature_raw,active,558.0,0.16592214422463306,,
+s559,feature_raw,active,559.0,0.0006381620931716656,,
+s560,feature_raw,excluded,560.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s561,feature_raw,active,561.0,0.0006381620931716656,,
+s562,feature_raw,active,562.0,0.0006381620931716656,,
+s563,feature_raw,active,563.0,0.1742182514358647,,
+s564,feature_raw,active,564.0,0.1742182514358647,,
+s565,feature_raw,excluded,565.0,0.1742182514358647,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s566,feature_raw,excluded,566.0,0.1742182514358647,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s567,feature_raw,excluded,567.0,0.1742182514358647,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s568,feature_raw,active,568.0,0.1742182514358647,,
+s569,feature_raw,active,569.0,0.1742182514358647,,
+s570,feature_raw,active,570.0,0.1742182514358647,,
+s571,feature_raw,active,571.0,0.0,,
+s572,feature_raw,active,572.0,0.0,,
+s573,feature_raw,excluded,573.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s574,feature_raw,excluded,574.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s575,feature_raw,excluded,575.0,0.0,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s576,feature_raw,active,576.0,0.0,,
+s577,feature_raw,active,577.0,0.0,,
+s578,feature_raw,active,578.0,0.0,,
+s579,feature_raw,excluded,579.0,0.6056158264199106,,missing: NaN fraction > 0.5
+s580,feature_raw,excluded,580.0,0.6056158264199106,,missing: NaN fraction > 0.5
+s581,feature_raw,excluded,581.0,0.6056158264199106,,missing: NaN fraction > 0.5
+s582,feature_raw,excluded,582.0,0.6056158264199106,,missing: NaN fraction > 0.5
+s583,feature_raw,excluded,583.0,0.0006381620931716656,,near-zero variance: dom_frac > 0.99 or cv < 0.01 or n_unique < 5; deviants not enriched (rescue needs n_deviant >= 5 and enrichment >= 2.0)
+s584,feature_raw,excluded,584.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s585,feature_raw,excluded,585.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s586,feature_raw,active,586.0,0.0006381620931716656,,
+s587,feature_raw,active,587.0,0.0006381620931716656,,
+s588,feature_raw,excluded,588.0,0.0006381620931716656,,correlated: |r| > 0.95; dropped the more-missing member of the pair
+s589,feature_raw,active,589.0,0.0006381620931716656,,
+s590,feature_raw,active,590.0,0.0006381620931716656,,
+f_miss_clq14,feature_eng,active,,0.0,"s073,s074,s346,s347","any-NaN over clique 14; legacy name miss_clq14 (legacy idx 72,73,345,346; OR 0.49, p=0.0008)"
+f_miss_clq23,feature_eng,active,,0.0,"s113,s248,s386,s520","any-NaN over clique 23; legacy name miss_clq23 (legacy idx 112,247,385,519; OR 0.53, p=0.0031)"
+f_miss_block5,feature_eng,active,,0.0,s543-s590,"block-5 dropout flag, label-free probe for the time-blocked holdout; legacy name miss_block5"
+f_row_missing_rate,feature_eng,active,,0.0,all 590 sensors,per-wafer missing share; legacy name row_missing_rate
+split,metadata,active,,0.0,timestamp,cv/holdout label from config.CUTOFF

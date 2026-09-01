@@ -1,0 +1,7 @@
+{
+  "file": "matrix.parquet",
+  "sha256_16": "79c30b64175a74ca",
+  "n_rows": 1309,
+  "n_features": 263,
+  "columns_md5_16": "149e56ee49c9ef52"
+}
