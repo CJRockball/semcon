@@ -34,9 +34,9 @@ def load_data():
     engine = get_engine()
     df = extract(engine).sort_values(schema.TIME_COL).reset_index(drop=True)
 
-    df_date = df['timestamp']
+    df_date = df[['wafer_id', 'timestamp']]
     
-    print(df_date.iloc[1309])
+    print(df_date.iloc[1305:1315])
 
     return 
 

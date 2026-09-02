@@ -1,14 +1,20 @@
 # Makefile - SECOM pipeline, one command end to end.
 #
-#   make            full pipeline: data -> features -> train (base + sel) -> calibrate -> spc -> sarimax
+#   make            full pipeline: ingest -> extract -> explore -> features
+#                   -> train (base + sel) -> calibrate -> spc -> sarimax
 #   make train      both training runs only
-#   make <stage>    single stage: data, features, train-base, train-sel, calibrate, spc, sarimax
+#   make <stage>    single stage: ingest, extract, explore, features,
+#                   train-base, train-sel, calibrate, spc, sarimax
 #   make test       pytest
+#   make hygiene    repo policy checks (no tracked .db, no stray data reads)
 #
-# Everything runs through the uv console scripts from pyproject.toml.
+# Console scripts come from pyproject.toml; the two data-layer stages use
+# python -m until semcon-ingest / semcon-extract entry points land (Phase 5).
 # If a script name differs on your machine, fix it once in this block:
 
 UV      := uv run
+INGEST  := $(UV) python -m semcon.db_ingest   # -> $(UV) semcon-ingest
+EXTRACT := $(UV) python -m semcon.extract     # -> $(UV) semcon-extract
 EXPLORE := $(UV) semcon-explore
 FEATURE := $(UV) semcon-features
 TRAIN   := $(UV) semcon-train_xgb
@@ -16,29 +22,39 @@ CALIB   := $(UV) semcon-calibrate
 SPC     := $(UV) semcon-spc
 SARIMAX := $(UV) semcon-sarimax
 
-# Run-name slug for the feature-selection run. The selection strength
-# (gamma = 0.25) comes from the semcon config, not the CLI - if you change
-# it there, rename this slug to match.
-SEL_RUN := sel_g025
+# Run-name slugs, matching the post-migration defaults in train_xgb.
+# Selection strength (gamma) comes from semcon config, not the CLI - if
+# you change it there, the slug convention is your reminder to note it.
+BASE_RUN := xgb_base
+SEL_RUN  := xgb_sel
 
-.PHONY: all data features train train-base train-sel calibrate spc sarimax test
+.PHONY: all ingest extract explore features train train-base train-sel \
+        calibrate spc sarimax test hygiene
 
-all: data features train calibrate spc sarimax
+all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
 
-data:
-	@echo "==> explore (raw -> processed)"
+ingest:
+	@echo "==> ingest (raw -> sqlite bronze)"
+	$(INGEST)
+
+extract: ingest
+	@echo "==> extract (sql -> wide frame, split registration)"
+	$(EXTRACT)
+
+explore: extract
+	@echo "==> explore (registry retirement decisions)"
 	$(EXPLORE)
 
-features: data
-	@echo "==> feature engineering"
+features: explore
+	@echo "==> feature engineering (register f* columns)"
 	$(FEATURE)
 
 train: train-base train-sel
 
 train-base: features
 	@echo "==> train baseline (all features, no selection)"
-	$(TRAIN) --no-selection --run-name baseline
+	$(TRAIN) --no-selection --run-name $(BASE_RUN)
 
 train-sel: features
 	@echo "==> train with feature selection ($(SEL_RUN))"
@@ -47,6 +63,7 @@ train-sel: features
 calibrate: train-sel
 	@echo "==> calibrate latest $(SEL_RUN) run (platt)"
 	run=$$(ls artifacts/runs | grep '_$(SEL_RUN)$$' | tail -1); \
+	test -n "$$run" || { echo "no $(SEL_RUN) run found in artifacts/runs"; exit 1; }; \
 	echo "    parent run: $$run"; \
 	$(CALIB) --run-id $$run --method platt
 
@@ -54,9 +71,17 @@ spc: train-sel
 	@echo "==> spc monitoring"
 	$(SPC)
 
-sarimax: data
+sarimax: extract
 	@echo "==> sarimax experiments"
 	$(SARIMAX)
 
 test:
 	$(UV) pytest -q
+
+hygiene:
+	@git ls-files | grep '\.db$$' && { echo "FAIL: .db tracked in git"; exit 1; } \
+		|| echo "ok: no .db tracked"
+	@grep -rn "read_csv\|read_parquet" src --include="*.py" \
+		| grep -v -e db_ingest -e migration_test \
+		&& { echo "FAIL: stray data-store reads above"; exit 1; } \
+		|| echo "ok: data reads contained to ingest + migration test"

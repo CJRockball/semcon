@@ -27,6 +27,9 @@ import joblib
 from sklearn.calibration import calibration_curve
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
+from semcon import schema
+from semcon.db import get_engine
+from semcon.extract import extract
 from sklearn.metrics import (
     average_precision_score,
     brier_score_loss,
@@ -71,17 +74,47 @@ def find_run(run_id: str | None) -> Path:
     return candidates[-1]
 
 
+def load_labels_from_run(run_dir: Path) -> tuple[pd.Series, dict]:
+    """Full label vector in split-index order, plus the run's splits.json.
+
+    splits.json records WHICH positions (timestamp-sorted frame); the DB
+    records WHAT the labels are. Caller slices cv/holdout via .iloc.
+    """
+    splits_path = run_dir / "splits.json"
+    assert splits_path.exists(), f"no splits.json in {run_dir} — rerun train_xgb"
+    splits = json.loads(splits_path.read_text())
+
+    engine = get_engine()
+    df = extract(engine).sort_values([schema.TIME_COL, schema.KEY_COL]).reset_index(drop=True)
+
+    if "is_fail" in df.columns:
+        y = df["is_fail"]
+    else:
+        y = df[schema.TARGET_COL].eq(1).astype("int8")  # raw -1/1 -> 0/1
+        # TODO(phase-4): is_fail creation moves to validate.py
+
+    return y.reset_index(drop=True), splits
+
+
 def load_parent(run: Path):
     """OOF scores + holdout scores + labels, reconstructed via splits.json."""
     oof = np.load(run / "oof_xgb1.npy")              # (repeats, n_cv)
     p_hold = np.load(run / "p_hold.npy")
-    splits = json.loads((run / "splits.json").read_text())
+    y, splits = load_labels_from_run(run)
 
-    dfy = (pd.read_parquet(DATA_PROCESSED / "dfy_v1.parquet")
-             .sort_values("timestamp").reset_index(drop=True))
-    y = dfy["target"].to_numpy()
-    y_cv = y[np.asarray(splits["train_index"])]
-    y_hold = y[np.asarray(splits["holdout_index"])]
+    y_cv = y.iloc[np.asarray(splits["train_index"])]
+    y_hold = y.iloc[np.asarray(splits["holdout_index"])]
+
+    assert len(y_cv) == oof.shape[-1], (
+        f"label/OOF mismatch: {len(y_cv)} vs {oof.shape[-1]}")
+    assert len(y_hold) == len(p_hold), (
+        f"holdout label/pred mismatch: {len(y_hold)} vs {len(p_hold)}")
+
+    expected = splits.get("n_train_fails")           # present on new runs only
+    if expected is not None:
+        assert int(y_cv.sum()) == expected, (
+            f"CV fails {int(y_cv.sum())} != recorded {expected}")
+
     return oof.mean(axis=0), y_cv, p_hold, y_hold
 
 

@@ -4,7 +4,7 @@ import tomllib
 from semcon.paths import ROOT
 
 # --- Data decisions (frozen after EDA; see validation.md) ---
-CUTOFF = "2008-10-05 05:31:00"   # pd.Timestamp(...) once EDA decides; None = full frame, split='unassigned'
+CUTOFF = "2008-10-05 05:30:00"   # pd.Timestamp(...) once EDA decides; None = full frame, split='unassigned'
 HOLDOUT_FRACTION = None
 
 # Thresholds reproduce the legacy drop_basic() run exactly (590 -> 257);

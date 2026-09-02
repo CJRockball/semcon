@@ -81,7 +81,10 @@ Repository = "https://github.com/CJRockball/semcon"
 packages = ["src/semcon"]
 
 [project.scripts]
+semcon-ingest = "semcon.db_ingest:main"
+
 semcon-explore = "semcon.explore:main"
+semcon-extract = "semcon.extract:main"
 semcon-features = "semcon.feature_eng:main"
 semcon-train_xgb = "semcon.train_xgb:main"
 semcon-calibrate = "semcon.calibrate:main"
