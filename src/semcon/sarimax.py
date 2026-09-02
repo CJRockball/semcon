@@ -1,6 +1,6 @@
 #%%
 """SARIMAX experiments: daily wafer volume (seasonality), 50-wafer fail
-fraction (ARIMA grid + staged exogenous tests), and channel-467 drift
+fraction (ARIMA grid + staged exogenous tests), and channel s468 drift
 detection (forecast-interval breaches).
 
 Phase discipline: model selection (grids, AICc) and rolling-origin evaluation
@@ -13,6 +13,12 @@ Window grids restart at the phase boundary: Phase-I windows cover rows
 the boundary.
 
 Runs register in artifacts/index_monitor.csv (surveillance table), like spc.
+
+Post-migration note: the DB's target is raw -1/1; load_data recodes to 0/1
+once here, so every downstream consumer sees the same convention.
+Channel and engineered-feature identifiers are registry s-names; artifact
+filenames derive from them directly (s468_series.png etc.), so the
+notebook's section titles and the run folder always agree.
 """
 from __future__ import annotations
 
@@ -30,9 +36,13 @@ from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from semcon import tracking
-from semcon.paths import ARTIFACTS, DATA_PROCESSED, LOGS
+from semcon.db import get_engine, data_fingerprint
+from semcon.extract import extract
+from semcon.paths import ARTIFACTS, LOGS
 from semcon.utils import setup_logging
-from semcon.config import load_config
+from semcon.config import CLIQUE_14, CLIQUE_23, BLOCK5_FIRST, load_config
+
+from semcon import schema
 
 logger = logging.getLogger("semcon")
 
@@ -44,29 +54,55 @@ SEASONAL_MODELS = {  # declared candidates for the daily-volume seasonality test
     "sar14": ((1, 0, 0), (1, 0, 0, 14)),  # biweekly (exploratory)
 }
 # Pre-registered hypothesis (EDA): missingness HALVES the fail rate, so the
-# coefficient on every miss_* regressor should be NEGATIVE.
-EXOG_CANDIDATES = ["miss_clq23", "miss_clq14", "row_missing_rate"]
-EXOG_EXPLORATORY = ["467"]  # does the strongest value-drifter co-move with fails?
-DRIFT_CHANNEL = "467"       # top delta in spc_screening.csv
-
+# coefficient on every f_miss_* regressor should be NEGATIVE.
+EXOG_CANDIDATES = ["f_miss_clq23", "f_miss_clq14", "f_row_missing_rate"]
+EXOG_EXPLORATORY = ["s468"]  # does the strongest value-drifter co-move with fails?
+DRIFT_CHANNEL = "s468"       # top delta in spc_screening.csv
+# after the other constants; BLOCK5 is derived, not duplicated
+BLOCK5 = [f"{schema.SENSOR_PREFIX}{n:03d}" for n in range(BLOCK5_FIRST, 591)]
 
 # ---------------------------------------------------------------- data
 
 def load_data(holdout_n: int, tail_n: int) -> tuple[pd.DataFrame, int, int]:
-    """Same loader as spc.py: sort once, slice positionally."""
-    dfX = pd.read_parquet(DATA_PROCESSED / "dfX_v2.parquet")
-    dfy = pd.read_parquet(DATA_PROCESSED / "dfy_v1.parquet")
-    ycols = ["target"] if "timestamp" in dfX.columns else ["timestamp", "target"]
-    df = (pd.concat([dfX, dfy[ycols]], axis=1)
-            .sort_values("timestamp").reset_index(drop=True))
-    df.columns = df.columns.map(str)
+    """Wide frame from the DB, sorted once; split positions are computed here.
+
+    Post-migration: extract() returns raw -1/1 target; recoded to 0/1 once.
+    """
+    engine = get_engine()
+    df = extract(engine).sort_values(schema.TIME_COL).reset_index(drop=True)
+    df["target"] = df["target"].eq(1).astype("int8")
+    df = add_protocol_features(df)
+    fp = data_fingerprint(engine)
     n = len(df)
     i_hold = n - tail_n - holdout_n
     i_tail = n - tail_n
     logger.info(f"[sarimax] data: {n} rows | phase I [0:{i_hold}] "
-                f"holdout [{i_hold}:{i_tail}] tail [{i_tail}:{n}]")
+                f"holdout [{i_hold}:{i_tail}] tail [{i_tail}:{n}] | "
+                f"fingerprint {fp}")
     return df, i_hold, i_tail
 
+
+
+
+def add_protocol_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Missingness/data-quality features from the raw wide frame.
+
+    Same definitions as spc.add_protocol_features — promote to a shared helper
+    (feature_eng) at the next cleanup; duplicated here so this module doesn't
+    import spc.py's module-level matplotlib.use("Agg") side effect.
+    """
+    df = df.copy()
+    def _clique_any_nan(members: list[str]) -> pd.Series:
+        present = [c for c in members if c in df.columns]
+        assert present, f"none of {members} present — registry or schema drifted"
+        return df[present].isna().any(axis=1)
+    df["f_miss_clq14"] = _clique_any_nan(CLIQUE_14).astype("int8")
+    df["f_miss_clq23"] = _clique_any_nan(CLIQUE_23).astype("int8")
+    df["f_miss_block5"] = df[BLOCK5].isna().any(axis=1).astype("int8")
+    raw = [c for c in df.columns if c.startswith(schema.SENSOR_PREFIX)
+           and c[1:].isdigit()]
+    df["f_row_missing_rate"] = df[raw].isna().mean(axis=1).astype("float32")
+    return df
 
 # ---------------------------------------------------------------- series builders
 
@@ -81,11 +117,9 @@ def windowed_mean(df: pd.DataFrame, cols: list[str], start: int, end: int,
     s = df.iloc[start:end][list(cols)].astype(float)
     return s.groupby(np.arange(len(s)) // window).mean()
 
-
 def fail_fraction(df: pd.DataFrame, i_hold: int, window: int = 50) -> pd.Series:
     """Fail fraction per `window` wafers, Phase I - the p-chart series."""
     return windowed_mean(df, ["target"], 0, i_hold, window)["target"]
-
 
 def daily_volume(df: pd.DataFrame, i_hold: int) -> pd.DataFrame:
     """Wafers measured per calendar day, Phase I only.
@@ -105,7 +139,6 @@ def daily_volume(df: pd.DataFrame, i_hold: int) -> pd.DataFrame:
                 f"{daily['sample_size'].min()}-{daily['sample_size'].max()} wafers/day")
     return daily
 
-
 # ---------------------------------------------------------------- plot helpers
 
 def save_series_fig(x, y, title: str, out_png) -> None:
@@ -116,7 +149,6 @@ def save_series_fig(x, y, title: str, out_png) -> None:
     fig.savefig(out_png, dpi=180)
     plt.close(fig)
 
-
 def save_acf_pacf_fig(data, lag: int, title: str, out_png) -> None:
     data = pd.Series(np.asarray(data).squeeze()).dropna()
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -126,7 +158,6 @@ def save_acf_pacf_fig(data, lag: int, title: str, out_png) -> None:
     fig.tight_layout()
     fig.savefig(out_png, dpi=180)
     plt.close(fig)
-
 
 def save_forecast_fig(train: pd.Series, actual: pd.Series, fc_mean, fc_lo, fc_hi,
                       title: str, out_png) -> np.ndarray:
@@ -153,7 +184,6 @@ def save_forecast_fig(train: pd.Series, actual: pd.Series, fc_mean, fc_lo, fc_hi
     plt.close(fig)
     return breach
 
-
 # ---------------------------------------------------------------- model helpers
 
 def fit_arima(series, order, exog=None):
@@ -167,7 +197,6 @@ def fit_arima(series, order, exog=None):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return ARIMA(series, exog=exog, order=order, trend=trend).fit()
-
 
 def fit_orders(series: pd.Series, orders: list, label: str) -> tuple[pd.DataFrame, dict]:
     """Fit the declared grid on the LEVEL series, AICc-ranked (small n)."""
@@ -186,12 +215,10 @@ def fit_orders(series: pd.Series, orders: list, label: str) -> tuple[pd.DataFram
                 f"{out.to_string(index=False)}")
     return out, models
 
-
 def mase(y_true, y_pred, scale: float) -> float:
     """MAE / in-sample naive scale; < 1 beats the no-model forecaster."""
     return float(np.mean(np.abs(np.asarray(y_true, dtype=float)
-                            - np.asarray(y_pred, dtype=float))) / scale)
-
+                             - np.asarray(y_pred, dtype=float))) / scale)
 
 def rolling_origin(y: pd.Series, candidates: dict, min_train: int = 16,
                    horizon: int = 2, step: int = 2) -> pd.DataFrame:
@@ -225,7 +252,6 @@ def rolling_origin(y: pd.Series, candidates: dict, min_train: int = 16,
     logger.info(f"rolling-origin MASE (phase I):\n{out.to_string(index=False)}")
     return out
 
-
 def forecast_holdout(train: pd.Series, hold: pd.Series, order, exog_tr,
                      exog_hold, label: str, figs) -> dict:
     """The one-shot holdout evaluation: refit on all of phase I, forecast once."""
@@ -250,7 +276,6 @@ def forecast_holdout(train: pd.Series, hold: pd.Series, order, exog_tr,
     out = pd.DataFrame(rows)
     logger.info(f"holdout forecast ({label}):\n{out.to_string(index=False)}")
     return out
-
 
 # ---------------------------------------------------------------- A: seasonal volume
 
@@ -291,13 +316,12 @@ def seasonal_volume(df: pd.DataFrame, i_hold: int, figs, summaries,
                       figs / "volume_resid_acf_pacf.png")
     return table
 
-
 # ---------------------------------------------------------------- B: fail fraction
 
 def exog_tests(frac: pd.Series, exog_df: pd.DataFrame, order) -> pd.DataFrame:
     """One extra parameter at a time on the frozen order (26-point budget).
 
-    Pre-registered sign: EDA says missingness halves the fail rate, so miss_*
+    Pre-registered sign: EDA says missingness halves the fail rate, so f_miss_*
     coefficients should be NEGATIVE.
     """
     base = fit_arima(frac, order)
@@ -311,17 +335,15 @@ def exog_tests(frac: pd.Series, exog_df: pd.DataFrame, order) -> pd.DataFrame:
             continue
         coef = float(res.params.get(col, np.nan))
         sign = ""
-        if col.startswith("miss"):
+        if col.startswith("f_miss"):
             sign = "ok (neg, as predicted)" if coef < 0 else "WRONG SIGN"
         rows.append({"exog": col, "aicc": res.aicc, "coef": coef,
                      "pvalue": float(res.pvalues.get(col, np.nan)),
                      "sign_check": sign})
-        (res.summary())  # keep object alive for caller-side saving if needed
     out = pd.DataFrame(rows)
     logger.info(f"exog tests on frozen ARIMA{order} (AICc, one regressor each):\n"
                 f"{out.to_string(index=False)}")
     return out
-
 
 def failrate_arima(df: pd.DataFrame, i_hold: int, i_tail: int, figs, summaries,
                    window: int = 50, lag: int = 10, min_train: int = 16,
@@ -386,13 +408,12 @@ def failrate_arima(df: pd.DataFrame, i_hold: int, i_tail: int, figs, summaries,
             "holdout_mase": float(hold.iloc[0]["mase"]),
             "holdout_coverage": float(hold.iloc[0]["coverage"])}
 
-
 # ---------------------------------------------------------------- C: channel drift
 
 def channel_drift(df: pd.DataFrame, i_hold: int, i_tail: int, figs, summaries,
                   channel: str = DRIFT_CHANNEL, window: int = 50,
                   lag: int = 10) -> dict:
-    """Channel 467 as TARGET: forecast-based drift detection.
+    """Channel s468 as TARGET: forecast-based drift detection.
 
     SPC answered 'did it move between two frozen windows' (descriptive).
     This asks the prospective question: fit phase I, forecast the holdout
@@ -403,26 +424,25 @@ def channel_drift(df: pd.DataFrame, i_hold: int, i_tail: int, figs, summaries,
     ch = windowed_mean(df, [channel], 0, i_hold, window)[channel]
     ch_hold = windowed_mean(df, [channel], i_hold, i_tail, window)[channel]
     save_series_fig(ch.index, ch,
-                    f"channel {channel} windowed mean per {window} wafers (phase I)",
-                    figs / f"ch{channel}_series.png")
-    save_acf_pacf_fig(ch, lag, f"channel {channel}", figs / f"ch{channel}_acf_pacf.png")
+                    f"{channel} windowed mean per {window} wafers (phase I)",
+                    figs / f"{channel}_series.png")
+    save_acf_pacf_fig(ch, lag, f"{channel}", figs / f"{channel}_acf_pacf.png")
 
-    grid, models = fit_orders(ch, ARIMA_ORDERS, f"channel {channel}")
-    grid.to_csv(summaries.parent / f"arima_grid_ch{channel}.csv", index=False)
+    grid, models = fit_orders(ch, ARIMA_ORDERS, f"{channel}")
+    grid.to_csv(summaries.parent / f"arima_grid_{channel}.csv", index=False)
     best_order = grid.iloc[0]["order"]
-    (summaries / f"ch{channel}_best.txt").write_text(str(models[best_order].summary()))
+    (summaries / f"{channel}_best.txt").write_text(str(models[best_order].summary()))
 
     hold = forecast_holdout(ch, ch_hold, best_order, None, None,
-                            f"ch{channel}", figs)
-    hold.to_csv(summaries.parent / f"holdout_metrics_ch{channel}.csv", index=False)
+                            f"{channel}", figs)
+    hold.to_csv(summaries.parent / f"holdout_metrics_{channel}.csv", index=False)
     breaches = int(hold.iloc[0]["breaches"])
     result = {"channel": channel, "order": str(best_order),
               "holdout_mase": float(hold.iloc[0]["mase"]),
               "breaches": breaches, "holdout_points": len(ch_hold),
               "breach_share": round(breaches / len(ch_hold), 3)}
-    logger.info(f"channel {channel} drift verdict: {result}")
+    logger.info(f"{channel} drift verdict: {result}")
     return result
-
 
 # ---------------------------------------------------------------- cli / main
 
@@ -434,7 +454,6 @@ def parse_args(argv=None):
     p.add_argument("--horizon", type=int, default=2)
     p.add_argument("--note", default=None)
     return p.parse_args(argv)
-
 
 def main(argv=None):
     args = parse_args(argv)
@@ -470,26 +489,19 @@ def main(argv=None):
         "ro_mase": round(fail["ro_mase"], 3),
         "holdout_mase": round(fail["holdout_mase"], 3),
         "holdout_coverage": round(fail["holdout_coverage"], 3),
-        "ch467_breach_share": drift["breach_share"],
+        "s468_breach_share": drift["breach_share"],
     }, index_file=MONITOR_INDEX)
     logger.info(f"[sarimax] done | artifacts -> {run}")
 
-
 def _in_ipykernel() -> bool:
-    try:
-        from IPython import get_ipython  # optional dep: notebooks extra only
-        shell = get_ipython()
-        return shell is not None and "IPKernelApp" in getattr(shell, "config", {})
-    except Exception:
-        return False
+    """True inside a Jupyter kernel; import-free so the script env needs no IPython."""
+    return "ipykernel" in __import__("sys").modules
 
 #%%
 if __name__ == "__main__" and not _in_ipykernel():
     main([])
-    
+
 # %% Interactive cells:
 # df, i_hold, i_tail = load_data(231, 27)
 # then call seasonal_volume / failrate_arima / channel_drift with your own
 # figs/summaries dirs, or just run main()
-
-# %%
