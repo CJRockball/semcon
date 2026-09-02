@@ -2,8 +2,8 @@
 ==============================================================================
 Dep. Variable:                 target   No. Observations:                   27
 Model:                 ARIMA(0, 1, 1)   Log Likelihood                  36.354
-Date:                Tue, 01 Sep 2026   AIC                            -68.708
-Time:                        20:21:06   BIC                            -66.192
+Date:                Wed, 02 Sep 2026   AIC                            -68.708
+Time:                        08:49:11   BIC                            -66.192
 Sample:                             0   HQIC                           -67.983
                                  - 27                                         
 Covariance Type:                  opg                                         

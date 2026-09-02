@@ -2,8 +2,8 @@
 ==============================================================================
 Dep. Variable:            sample_size   No. Observations:                   79
 Model:               SARIMAX(1, 0, 0)   Log Likelihood                -298.915
-Date:                Tue, 01 Sep 2026   AIC                            603.830
-Time:                        20:21:05   BIC                            610.939
+Date:                Wed, 02 Sep 2026   AIC                            603.830
+Time:                        08:49:09   BIC                            610.939
 Sample:                             0   HQIC                           606.678
                                  - 79                                         
 Covariance Type:                  opg                                         

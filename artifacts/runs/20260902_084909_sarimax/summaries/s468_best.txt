@@ -1,9 +1,9 @@
                                SARIMAX Results                                
 ==============================================================================
-Dep. Variable:                    467   No. Observations:                   27
+Dep. Variable:                   s468   No. Observations:                   27
 Model:                 ARIMA(1, 1, 0)   Log Likelihood                 -53.494
-Date:                Tue, 01 Sep 2026   AIC                            110.989
-Time:                        20:21:08   BIC                            113.505
+Date:                Wed, 02 Sep 2026   AIC                            110.989
+Time:                        08:49:12   BIC                            113.505
 Sample:                             0   HQIC                           111.713
                                  - 27                                         
 Covariance Type:                  opg                                         
