@@ -42,26 +42,12 @@ dependencies = [
     "pydantic>=2.0,<3.0",
     "SQLAlchemy>=2.0,<2.1",
     "pandera>=0.33.1",
-]
-
-# Extras = optional RUNTIME features, published in package metadata.
-# Install: uv pip install -e ".[notebooks,explain]"
-[project.optional-dependencies]
-notebooks = [
+    "statsmodels>=0.14",
+    "pulp>=2.8", 
+    "simpy>=4.1", 
+    "shap>=0.45", 
     "jupyterlab>=4.0",
     "ipykernel>=6.27",
-]
-# Roadmap extras: declared now so the plan is visible in the metadata;
-# promote to core when the corresponding module joins the main pipeline.
-timeseries = [
-    "statsmodels>=0.14",    # SARIMAX tool-drift / fail-rate forecasting
-]
-optimization = [
-    "simpy>=4.1",           # discrete-event simulation of a tool cluster
-    "pulp>=2.8",            # MIP scheduling
-]
-explain = [
-    "shap>=0.45",           # TreeSHAP model/feature evaluation (post-baseline)
 ]
 
 # Dependency groups = DEVELOPER-only tooling, never published (PEP 735).
