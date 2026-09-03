@@ -57,7 +57,6 @@ from semcon.validate import ensure_is_fail
     
 logger = logging.getLogger("semcon")
 
-
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description='SECOM XGBoost training')
     p.add_argument('--run-name', type=str, default=None,

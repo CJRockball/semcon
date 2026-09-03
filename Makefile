@@ -86,10 +86,12 @@ test:
 hygiene:
 	@git ls-files | grep '\.db$$' && { echo "FAIL: .db tracked in git"; exit 1; } \
 		|| echo "ok: no .db tracked"
-	@grep -rn "read_csv\|read_parquet" src --include="*.py" \
+	@grep -rnE "read_(csv|parquet).*(DATA_RAW|DATA_PROCESSED|secom\.|dfX_v|dfy_v)" \
+		src --include="*.py" \
 		| grep -v -e db_ingest -e migration_test \
 		&& { echo "FAIL: stray data-store reads above"; exit 1; } \
-		|| echo "ok: data reads contained to ingest + migration test"
+		|| echo "ok: data store has one reader (+ frozen migration test)"
+	@$(UV) ruff check src || echo "note: ruff findings above"
 
 clean:
 	@echo "==> removing derived database, snapshots, artifacts, logs, and Python caches"

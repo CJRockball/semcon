@@ -36,7 +36,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from semcon.paths import ARTIFACTS, DATA_PROCESSED, LOGS
+from semcon.paths import ARTIFACTS, LOGS
 from semcon.utils import setup_logging
 from semcon import tracking
 from semcon.validate import ensure_is_fail
