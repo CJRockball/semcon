@@ -246,7 +246,8 @@ def rolling_origin(y: pd.Series, candidates: dict, min_train: int = 16,
         for name, f in fc.items():
             errs.setdefault(name, []).extend(np.abs(actual - f))
     out = pd.DataFrame([{"model": k, "mae": float(np.mean(v)),
-                         "mase": float(np.mean(v) / scale), "n": len(v)}
+                         "mase": float(np.mean(v) / scale) if scale > 0 else np.nan, 
+                         "n": len(v)}
                         for k, v in errs.items()])
     out = out.sort_values("mase").reset_index(drop=True)
     logger.info(f"rolling-origin MASE (phase I):\n{out.to_string(index=False)}")

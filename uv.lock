@@ -3189,23 +3189,6 @@ dependencies = [
     { name = "xgboost" },
 ]
 
-[package.optional-dependencies]
-explain = [
-    { name = "shap", version = "0.51.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "shap", version = "0.52.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-notebooks = [
-    { name = "ipykernel" },
-    { name = "jupyterlab" },
-]
-optimization = [
-    { name = "pulp" },
-    { name = "simpy" },
-]
-timeseries = [
-    { name = "statsmodels" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
@@ -3216,30 +3199,23 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ipykernel", specifier = ">=6.27" },
-    { name = "ipykernel", marker = "extra == 'notebooks'", specifier = ">=6.27" },
     { name = "jupyterlab", specifier = ">=4.0" },
-    { name = "jupyterlab", marker = "extra == 'notebooks'", specifier = ">=4.0" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pandera", specifier = ">=0.33.1" },
     { name = "pulp", specifier = ">=2.8" },
-    { name = "pulp", marker = "extra == 'optimization'", specifier = ">=2.8" },
     { name = "pyarrow", specifier = ">=15.0" },
     { name = "pydantic", specifier = ">=2.0,<3.0" },
     { name = "scikit-learn", specifier = ">=1.4,<2.0" },
     { name = "scipy", specifier = ">=1.11" },
     { name = "seaborn", specifier = ">=0.13" },
     { name = "shap", specifier = ">=0.45" },
-    { name = "shap", marker = "extra == 'explain'", specifier = ">=0.45" },
     { name = "simpy", specifier = ">=4.1" },
-    { name = "simpy", marker = "extra == 'optimization'", specifier = ">=4.1" },
     { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
     { name = "statsmodels", specifier = ">=0.14" },
-    { name = "statsmodels", marker = "extra == 'timeseries'", specifier = ">=0.14" },
     { name = "xgboost", specifier = "==2.1.1" },
 ]
-provides-extras = ["notebooks", "timeseries", "optimization", "explain"]
 
 [package.metadata.requires-dev]
 dev = [

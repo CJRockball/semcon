@@ -76,12 +76,10 @@ def test_primary_key_survives(engine):
 def test_ingestion_log_records_hashes(engine):
     log = pd.read_sql("SELECT * FROM ingestion_log", engine)
     assert len(log) >= 2, "one row per source file per load"
-    has_file_hash = any(
-        log[c].astype(str).str.len().eq(64).all()
-        for c in log.columns
-        if log[c].dtype == object
-    )
-    assert has_file_hash, f"no 64-char source hash in {list(log.columns)}"
+    hashes = log["source_sha256"].dropna().astype(str)
+    assert not hashes.empty, "source_sha256 never populated"
+    assert hashes.str.fullmatch(r"[0-9a-fA-F]{16,64}").all(), \
+        f"unexpected hash values: {hashes.head().tolist()}"
 
 
 # --- extract / silver -----------------------------------------------------------

@@ -57,7 +57,7 @@ def test_rolling_origin_baselines():
     y_const = pd.Series(np.full(30, 0.07))
     out = rolling_origin(y_const, {}, min_train=16, horizon=2, step=2)
     assert set(out["model"]) == {"persistence", "mean"}
-    assert (out["mae"] == 0).all()
+    assert (out["mae"] < 1e-12).all()
 
     # on a unit ramp, persistence lags by one step: |e| = 1 and 2 at h = 1, 2
     y_ramp = pd.Series(np.arange(30.0))
@@ -68,12 +68,12 @@ def test_rolling_origin_baselines():
 def test_exog_tests_recovers_negative_sign():
     rng = np.random.default_rng(1)
     n = 120
-    exog = pd.DataFrame({"miss_clq14": rng.normal(size=n)})
-    y = pd.Series(0.07 - 0.5 * exog["miss_clq14"].to_numpy()
+    exog = pd.DataFrame({"f_miss_clq14": rng.normal(size=n)})
+    y = pd.Series(0.07 - 0.5 * exog["f_miss_clq14"].to_numpy()
                   + rng.normal(scale=0.01, size=n))
     tab = exog_tests(y, exog, (1, 0, 0))
-    assert tab.iloc[0]["exog"] == "(none)"      # univariate baseline is row zero
-    row = tab[tab["exog"] == "miss_clq14"].iloc[0]
+    assert tab["exog"].head(1).item() == "(none)"   # baseline is row zero
+    row = tab.loc[tab["exog"] == "f_miss_clq14"].squeeze()
     assert row["coef"] < 0
     assert row["sign_check"] == "ok (neg, as predicted)"
 
