@@ -1,7 +1,3 @@
-run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift,window,seasonal_winner,failfrac_order,exog_winner,exog_coef,exog_p,ro_winner,ro_mase,holdout_mase,holdout_coverage,ch467_breach_share,data,snapshot_id,s468_breach_share
-20260829_103154_spc,spc,robust,,257.0,0.0268,0.2877,36.0,,,,,,,,,,,,,,
-20260829_103202_sarimax,sarimax,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,0.0,,,
-20260901_202104_sarimax,sarimax,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,0.0,,,
-20260901_202117_spc,spc,robust,,257.0,0.0268,0.2877,36.0,,,,,,,,,,,,,,
-20260901_213857_spc,spc,robust,,590.0,0.0253,0.5348,63.0,,,,,,,,,,,,20f0e7ee434f7dcb,20260901_133857_4b19711c,
-20260902_084909_sarimax,sarimax,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,,,,0.0
+run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift,data,snapshot_id,window,seasonal_winner,failfrac_order,exog_winner,exog_coef,exog_p,ro_winner,ro_mase,holdout_mase,holdout_coverage,s468_breach_share
+20260903_141118_spc,spc,robust,,590.0,0.0253,0.5348,63.0,20f0e7ee434f7dcb,20260903_061118_772ee59c,,,,,,,,,,,
+20260903_141128_sarimax,sarimax,,,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,0.0

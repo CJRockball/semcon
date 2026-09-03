@@ -10,7 +10,7 @@ import pandas as pd
 from sqlalchemy import Engine
 
 from semcon import schema
-from semcon.config import CUTOFF
+from semcon.config import CUTOFF, EXCLUDE_AFTER
 from semcon.db import get_engine, register_columns, run_query
 from semcon.paths import LOGS
 from semcon.utils import setup_logging
@@ -23,9 +23,11 @@ def extract(
     start: str = "1970-01-01",
     end: str = "2100-01-01",
     cutoff=CUTOFF,
+    exclude_after = EXCLUDE_AFTER,
 ) -> pd.DataFrame:
     
-    df = run_query("extract_wafers", engine, start=start, end=end, cutoff=cutoff)
+    df = run_query("extract_wafers", engine, start=start, end=end, 
+                   cutoff=cutoff, exclude_after=exclude_after)
     df[schema.TIME_COL] = pd.to_datetime(df[schema.TIME_COL], format="ISO8601")
     
     if cutoff is not None:
@@ -34,6 +36,14 @@ def extract(
             raise ValueError(
                 f"{n_clash} wafers timestamped exactly at cutoff {cutoff}; "
                 "BETWEEN is inclusive — move the cutoff between wafers"
+            )
+
+    if exclude_after is not None:
+        n_clash = int((df[schema.TIME_COL] == pd.Timestamp(exclude_after)).sum())
+        if n_clash:
+            raise ValueError(
+                f"{n_clash} wafers timestamped exactly at exclude_after {exclude_after}; "
+                "BETWEEN is inclusive — move the exclude_after between wafers"
             )
 
     register_columns(

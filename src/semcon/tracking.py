@@ -104,8 +104,8 @@ def save_splits(run_dir: Path, df_train: pd.DataFrame,
     payload = {
         "train_index": df_train.index.tolist(),
         "holdout_index": df_test.index.tolist(),
-        "n_train": len(df_train),
-        "n_holdout": len(df_test),
+        "n_train_fails": int(df_train["is_fail"].sum()),
+        "n_holdout_fails": int(df_test["is_fail"].sum()),
     }
     (run_dir / "splits.json").write_text(json.dumps(payload))
 
