@@ -53,7 +53,8 @@ from semcon.selection import select_features
 from semcon.snapshots import write_gold_snapshot
 from semcon.tracking import append_index, make_run, save_features, save_splits
 from semcon.utils import setup_logging
-
+from semcon.validate import ensure_is_fail
+    
 logger = logging.getLogger("semcon")
 
 
@@ -86,7 +87,7 @@ def load_data(engine, test_split: int, time_split: int):
                                         # if feature_eng hasn't run on this DB
 
     # Phase 4: is_fail moves to validate.py (silver boundary owns encoding)
-    df["is_fail"] = df[schema.TARGET_COL].eq(1).astype("int8")
+    df = ensure_is_fail(df, engine)
 
     features = feature_columns(load_registry(engine))
     bad = set(schema.NON_FEATURE_COLS) & set(features)

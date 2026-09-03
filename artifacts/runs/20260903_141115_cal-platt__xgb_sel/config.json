@@ -1,0 +1,18 @@
+{
+  "run_id": "20260903_141115_cal-platt__xgb_sel",
+  "timestamp": "20260903_141115",
+  "git_sha": "2884c46",
+  "python": "3.11.14",
+  "packages": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "xgboost": "2.1.1"
+  },
+  "note": "",
+  "config": {
+    "script": "calibrate",
+    "method": "platt",
+    "parent_run": "20260903_141024_xgb_sel"
+  }
+}

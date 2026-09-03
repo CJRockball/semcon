@@ -33,14 +33,15 @@ classifiers = [
 dependencies = [
     "numpy>=1.26",
     "pandas>=2.2",
-    "pyarrow>=15.0",        # parquet I/O in explore.py / xgb scripts
-    "scikit-learn>=1.4,<2.0",    # RepeatedStratifiedKFold, metrics, mutual_info
-    "xgboost==2.1.1",         # 2.x callback API (EarlyStopping save_best)
-    "scipy>=1.11",          # spearmanr, connected_components, stats
+    "pyarrow>=15.0", # parquet I/O in explore.py / xgb scripts
+    "scikit-learn>=1.4,<2.0", # RepeatedStratifiedKFold, metrics, mutual_info
+    "xgboost==2.1.1", # 2.x callback API (EarlyStopping save_best)
+    "scipy>=1.11", # spearmanr, connected_components, stats
     "matplotlib>=3.8",
-    "seaborn>=0.13",        # EDA notebook
+    "seaborn>=0.13", # EDA notebook
     "pydantic>=2.0,<3.0",
-    "SQLAlchemy>=2.0,<2.1"
+    "SQLAlchemy>=2.0,<2.1",
+    "pandera>=0.33.1",
 ]
 
 # Extras = optional RUNTIME features, published in package metadata.
@@ -82,12 +83,13 @@ packages = ["src/semcon"]
 
 [project.scripts]
 semcon-ingest = "semcon.db_ingest:main"
-
-semcon-explore = "semcon.explore:main"
 semcon-extract = "semcon.extract:main"
+semcon-validate = "semcon.validate:main"
+semcon-explore = "semcon.explore:main"
 semcon-features = "semcon.feature_eng:main"
 semcon-train_xgb = "semcon.train_xgb:main"
 semcon-calibrate = "semcon.calibrate:main"
+
 semcon-spc = "semcon.spc:main"
 semcon-sarimax = "semcon.sarimax:main"
 

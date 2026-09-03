@@ -2,13 +2,12 @@
 from pydantic import BaseModel, ConfigDict, Field
 import tomllib
 from semcon.paths import ROOT
+import pandas as pd
 
 # --- Data decisions (frozen after EDA; see validation.md) ---
 CUTOFF = "2008-10-05 05:30:00"   # pd.Timestamp(...) once EDA decides; None = full frame, split='unassigned'
 HOLDOUT_FRACTION = None
-
-# Thresholds reproduce the legacy drop_basic() run exactly (590 -> 257);
-# provenance: flat-file EDA, 2026-08-26..29 run artifacts.
+EXCLUDE_AFTER = "2008-10-15 21:43:00.000000" # NaN-explosion regime break, eda.ipynb §3
 
 
 # --- Column quality rules (EDA-derived; see artifacts/eda_*/eda_summary.md) ---

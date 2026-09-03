@@ -39,6 +39,8 @@ from sklearn.metrics import (
 from semcon.paths import ARTIFACTS, DATA_PROCESSED, LOGS
 from semcon.utils import setup_logging
 from semcon import tracking
+from semcon.validate import ensure_is_fail
+
 
 logger = logging.getLogger("semcon")
 
@@ -87,11 +89,8 @@ def load_labels_from_run(run_dir: Path) -> tuple[pd.Series, dict]:
     engine = get_engine()
     df = extract(engine).sort_values([schema.TIME_COL, schema.KEY_COL]).reset_index(drop=True)
 
-    if "is_fail" in df.columns:
-        y = df["is_fail"]
-    else:
-        y = df[schema.TARGET_COL].eq(1).astype("int8")  # raw -1/1 -> 0/1
-        # TODO(phase-4): is_fail creation moves to validate.py
+    df = ensure_is_fail(df, engine)
+    y = df["is_fail"]
 
     return y.reset_index(drop=True), splits
 

@@ -12,15 +12,16 @@
 # python -m until semcon-ingest / semcon-extract entry points land (Phase 5).
 # If a script name differs on your machine, fix it once in this block:
 
-UV      := uv run
-INGEST  := $(UV) python -m semcon.db_ingest   # -> $(UV) semcon-ingest
-EXTRACT := $(UV) python -m semcon.extract     # -> $(UV) semcon-extract
-EXPLORE := $(UV) semcon-explore
-FEATURE := $(UV) semcon-features
-TRAIN   := $(UV) semcon-train_xgb
-CALIB   := $(UV) semcon-calibrate
-SPC     := $(UV) semcon-spc
-SARIMAX := $(UV) semcon-sarimax
+UV       := uv run
+INGEST   := $(UV) python -m semcon.db_ingest   # -> $(UV) semcon-ingest
+EXTRACT  := $(UV) python -m semcon.extract     # -> $(UV) semcon-extract
+VALIDATE := $(UV) semcon-validate
+EXPLORE  := $(UV) semcon-explore
+FEATURE  := $(UV) semcon-features
+TRAIN    := $(UV) semcon-train_xgb
+CALIB    := $(UV) semcon-calibrate
+SPC      := $(UV) semcon-spc
+SARIMAX  := $(UV) semcon-sarimax
 
 # Run-name slugs, matching the post-migration defaults in train_xgb.
 # Selection strength (gamma) comes from semcon config, not the CLI - if
@@ -29,7 +30,7 @@ BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
 .PHONY: all ingest extract explore features train train-base train-sel \
-        calibrate spc sarimax test hygiene
+        calibrate spc sarimax test hygiene clean
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -41,6 +42,10 @@ ingest:
 extract: ingest
 	@echo "==> extract (sql -> wide frame, split registration)"
 	$(EXTRACT)
+
+validate: extract
+	@echo "==> validate "
+	$(VALIDATE)
 
 explore: extract
 	@echo "==> explore (registry retirement decisions)"
@@ -85,3 +90,18 @@ hygiene:
 		| grep -v -e db_ingest -e migration_test \
 		&& { echo "FAIL: stray data-store reads above"; exit 1; } \
 		|| echo "ok: data reads contained to ingest + migration test"
+
+clean:
+	@echo "==> removing derived database, snapshots, artifacts, logs, and Python caches"
+	rm -f data/secom.db data/secom.db-journal data/secom.db-wal data/secom.db-shm
+	rm -rf data/snapshots
+	rm -f data/column_registry.csv
+	rm -rf artifacts/runs
+	rm -f artifacts/index.csv artifacts/index_monitor.csv artifacts/diagnostic.parquet
+	rm -rf artifacts/eda_*
+	rm -f logs/*
+	find src tests -type d -name "__pycache__" -prune -exec rm -rf {} +
+	find . -type f -name "*.py[co]" -delete
+	@mkdir -p data/snapshots artifacts/runs logs
+	@touch logs/.gitignore
+	@echo "==> clean complete; raw data and .venv preserved"
