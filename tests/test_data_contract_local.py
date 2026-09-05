@@ -5,7 +5,7 @@ Run: uv run pytest -m local_data
 
 import pytest
 
-from semcon.db import get_engine, load_registry, feature_columns
+from semcon.db import get_engine, load_registry
 from semcon.extract import extract
 from semcon.feature_eng import build_features
 

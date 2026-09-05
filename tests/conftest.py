@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import create_engine
 
 from semcon import db_ingest, schema
-from semcon.db import get_engine, load_registry, register_columns
+from semcon.db import load_registry, register_columns
 from semcon.extract import extract
 from semcon.feature_eng import build_features
 
@@ -65,7 +65,7 @@ def model_frame(frame, synthetic_env):
     """Silver + engineered features (the train_xgb input composition)."""
     eng, _ts = synthetic_env
     out, registry_rows = build_features(frame)
-    register_columns(registry_rows, eng)    
+    register_columns(registry_rows, eng)
     return out
 
 
