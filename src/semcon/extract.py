@@ -4,6 +4,7 @@ Always the full frame; the split label comes from config.CUTOFF
 (None pre-EDA -> every row 'unassigned'). Thin by design: no cleaning,
 no label encoding, no feature work — those live downstream.
 """
+
 import logging
 
 import pandas as pd
@@ -23,13 +24,14 @@ def extract(
     start: str = "1970-01-01",
     end: str = "2100-01-01",
     cutoff=CUTOFF,
-    exclude_after = EXCLUDE_AFTER,
+    exclude_after=EXCLUDE_AFTER,
 ) -> pd.DataFrame:
-    
-    df = run_query("extract_wafers", engine, start=start, end=end, 
-                   cutoff=cutoff, exclude_after=exclude_after)
+
+    df = run_query(
+        "extract_wafers", engine, start=start, end=end, cutoff=cutoff, exclude_after=exclude_after
+    )
     df[schema.TIME_COL] = pd.to_datetime(df[schema.TIME_COL], format="ISO8601")
-    
+
     if cutoff is not None:
         n_clash = int((df[schema.TIME_COL] == pd.Timestamp(cutoff)).sum())
         if n_clash:
@@ -47,15 +49,17 @@ def extract(
             )
 
     register_columns(
-        [{
-            "column_name": schema.SPLIT_COL,
-            "role": schema.Role.METADATA.value,
-            "status": schema.Status.ACTIVE.value,
-            "col_index": None,
-            "missing_pct": 0.0,
-            "derived_from": schema.TIME_COL,
-            "notes": "cv/holdout label from config.CUTOFF",
-        }],
+        [
+            {
+                "column_name": schema.SPLIT_COL,
+                "role": schema.Role.METADATA.value,
+                "status": schema.Status.ACTIVE.value,
+                "col_index": None,
+                "missing_pct": 0.0,
+                "derived_from": schema.TIME_COL,
+                "notes": "cv/holdout label from config.CUTOFF",
+            }
+        ],
         engine,
     )
     return df
@@ -67,8 +71,11 @@ def main() -> None:
     logger.info("[extract] start")
     engine = get_engine()
     df = extract(engine)
-    logger.info("[extract] frame %s; split counts: %s",
-                df.shape, df[schema.SPLIT_COL].value_counts().to_dict())
+    logger.info(
+        "[extract] frame %s; split counts: %s",
+        df.shape,
+        df[schema.SPLIT_COL].value_counts().to_dict(),
+    )
     logger.info("[extract] done")
 
 

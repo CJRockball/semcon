@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def hedges_g(X: pd.DataFrame, y: pd.Series) -> pd.Series:
@@ -10,8 +10,9 @@ def hedges_g(X: pd.DataFrame, y: pd.Series) -> pd.Series:
     v1, v0 = x1.var(ddof=1), x0.var(ddof=1)
     sp = np.sqrt(((n1 - 1) * v1 + (n0 - 1) * v0) / (n1 + n0 - 2))
     d = (m1 - m0) / sp.replace(0, np.nan)
-    J = 1 - 3 / (4 * (n1 + n0) - 9)          # small-sample correction
+    J = 1 - 3 / (4 * (n1 + n0) - 9)  # small-sample correction
     return (d * J).abs().fillna(0.0)
+
 
 def select_features(Xtr, ytr, g_min=0.25, k_min=30, k_max=100):
     """Univariate filter, recomputed inside every fold (no full-data leakage).

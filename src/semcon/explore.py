@@ -17,6 +17,7 @@ vs base rate). Statistics are computed on the full frame until
 config.CUTOFF is set; then compute on the CV pool and apply globally —
 the call site changes, the rules stay.
 """
+
 import logging
 from datetime import datetime
 
@@ -58,10 +59,7 @@ def assess_quality(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, list[str]]
 
     Returns (diagnostic table indexed by feature, {rule: [columns]}).
     """
-    sensors = [
-        c for c in df.columns
-        if c.startswith(schema.SENSOR_PREFIX) and len(c) == 4
-    ]
+    sensors = [c for c in df.columns if c.startswith(schema.SENSOR_PREFIX) and len(c) == 4]
     fail = df[schema.TARGET_COL].eq(1)
     fail_rate = float(fail.mean())
 
@@ -80,16 +78,18 @@ def assess_quality(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, list[str]]
         deviant = s.notna() & (s != dom_val)
         n_dev = int(deviant.sum())
         dev_fail_rate = fail[deviant].mean() if n_dev > 0 else np.nan
-        rows.append({
-            "feature": col,
-            "n_unique": s.nunique(),
-            "dom_frac": dom_frac,
-            "cv": cv,
-            "missing_rate": s.isna().mean(),
-            "n_deviant": n_dev,
-            "dev_fail_rate": dev_fail_rate,
-            "enrichment": dev_fail_rate / fail_rate if n_dev > 0 else np.nan,
-        })
+        rows.append(
+            {
+                "feature": col,
+                "n_unique": s.nunique(),
+                "dom_frac": dom_frac,
+                "cv": cv,
+                "missing_rate": s.isna().mean(),
+                "n_deviant": n_dev,
+                "dev_fail_rate": dev_fail_rate,
+                "enrichment": dev_fail_rate / fail_rate if n_dev > 0 else np.nan,
+            }
+        )
     diag = pd.DataFrame(rows).set_index("feature")
 
     # rule 1: constants
@@ -105,13 +105,10 @@ def assess_quality(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, list[str]]
     stage3 = [c for c in stage2 if c not in set(high_nan)]
     d3 = diag.loc[stage3]
     flagged = d3[
-        (d3["dom_frac"] > DOMINANT_FRAC)
-        | (d3["cv"] < CV_LIMIT)
-        | (d3["n_unique"] < FEW_UNIQUE)
+        (d3["dom_frac"] > DOMINANT_FRAC) | (d3["cv"] < CV_LIMIT) | (d3["n_unique"] < FEW_UNIQUE)
     ]
     rescued = flagged[
-        (flagged["n_deviant"] >= MIN_DEVIANT_N)
-        & (flagged["enrichment"] >= DEVIANT_FAIL_ENRICHMENT)
+        (flagged["n_deviant"] >= MIN_DEVIANT_N) & (flagged["enrichment"] >= DEVIANT_FAIL_ENRICHMENT)
     ]
     nzv = flagged.index.difference(rescued.index).tolist()
 
@@ -137,8 +134,7 @@ def assess_quality(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, list[str]]
             f"enrichment >= {DEVIANT_FAIL_ENRICHMENT})"
         ): nzv,
         (
-            f"correlated: |r| > {FEATURE_CORR}; "
-            "dropped the more-missing member of the pair"
+            f"correlated: |r| > {FEATURE_CORR}; dropped the more-missing member of the pair"
         ): correlated,
     }
     return diag, verdicts
@@ -181,8 +177,7 @@ def write_eda_evidence(
         lines.append(f"| {rule} | {len(cols)} |")
     lines += [
         "",
-        f"Active sensors after retirement: **{n_active}** "
-        "(legacy flat-file run: 257 — must match)",
+        f"Active sensors after retirement: **{n_active}** (legacy flat-file run: 257 — must match)",
         "",
         "Supervised-rule note: the NZV enrichment rescue uses the target. "
         "Computed on the full frame until config.CUTOFF is set; then on the "
@@ -207,8 +202,7 @@ def main() -> None:
     diag, verdicts = assess_quality(df)
     retired = apply_verdicts(verdicts, engine)
     active = feature_columns(load_registry(engine))
-    logger.info(
-        f"[explore] retired {retired} sensors, {len(active)} active (legacy run: 257)")
+    logger.info(f"[explore] retired {retired} sensors, {len(active)} active (legacy run: 257)")
 
     write_eda_evidence(diag, verdicts, len(active), engine)
     export_registry_csv(engine)

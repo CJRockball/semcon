@@ -13,6 +13,7 @@ proves. Nothing here reads data files.
 """
 
 import matplotlib
+
 matplotlib.use("Agg")  # headless: evaluation saves figures
 
 import numpy as np
@@ -34,8 +35,8 @@ def test_parse_args_defaults():
 
 def test_parse_args_flags():
     args = train_xgb.parse_args(
-        ["--no-selection", "--run-name", "baseline",
-         "--set", "max_depth=5", "--set", "eta=0.1"])
+        ["--no-selection", "--run-name", "baseline", "--set", "max_depth=5", "--set", "eta=0.1"]
+    )
     assert args.use_selection is False
     assert args.run_name == "baseline"
     assert args.overrides == ["max_depth=5", "eta=0.1"]  # repeated, order kept
@@ -59,9 +60,15 @@ def test_evaluate_writes_artifacts_and_metrics(tmp_path):
 
     metrics = train_xgb.evaluate(df_train, df_test, oof, p_hold, out=tmp_path)
 
-    expected = {"summary_oof.csv", "summary_hold.csv", "pr_curve_holdout.png",
-                "conf_heatmap.png", "pred_hold_stats.csv", "oof_mean_stats.csv",
-                "pr_oof_hold.csv"}
+    expected = {
+        "summary_oof.csv",
+        "summary_hold.csv",
+        "pr_curve_holdout.png",
+        "conf_heatmap.png",
+        "pred_hold_stats.csv",
+        "oof_mean_stats.csv",
+        "pr_oof_hold.csv",
+    }
     written = {p.name for p in tmp_path.iterdir()}
     assert expected <= written, f"missing artifacts: {expected - written}"
     for name in expected:

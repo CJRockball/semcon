@@ -12,13 +12,13 @@ Also the single home of is_fail (target recode -1/1 -> 0/1), registered
 in the column registry as role=target, derived_from=target. Consumers
 never recode labels themselves.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import logging
 import re
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -47,13 +47,18 @@ def ensure_is_fail(df: pd.DataFrame, engine) -> pd.DataFrame:
             raise ValueError("is_fail exists but disagrees with target recode")
     else:
         df = df.assign(is_fail=truth)
-    register_columns([{
-    "column_name": "is_fail",
-    "role": schema.Role.TARGET,
-    "status": "active",
-    "derived_from": schema.TARGET_COL,
-    "notes": "recode -1/1 -> 0/1; single home: validate.py",
-}], engine)
+    register_columns(
+        [
+            {
+                "column_name": "is_fail",
+                "role": schema.Role.TARGET,
+                "status": "active",
+                "derived_from": schema.TARGET_COL,
+                "notes": "recode -1/1 -> 0/1; single home: validate.py",
+            }
+        ],
+        engine,
+    )
     return df
 
 
@@ -70,21 +75,17 @@ def check_schema(df: pd.DataFrame) -> None:
         {
             schema.KEY_COL: pa.Column(pa.Int64, nullable=False, unique=True),
             schema.TIME_COL: pa.Column("datetime64[ns]", nullable=False),
-            schema.TARGET_COL: pa.Column(
-                pa.Int64, pa.Check.isin([-1, 1]), nullable=False),
+            schema.TARGET_COL: pa.Column(pa.Int64, pa.Check.isin([-1, 1]), nullable=False),
             "is_fail": pa.Column(pa.Int8, pa.Check.isin([0, 1]), nullable=False),
-            "split": pa.Column(str, pa.Check.isin(sorted(SPLIT_LABELS)),
-                               nullable=False),
+            "split": pa.Column(str, pa.Check.isin(sorted(SPLIT_LABELS)), nullable=False),
         },
         strict=False,  # sensor/engineered columns pass through
     )
     structural.validate(df, lazy=True)  # collect all failures before raising
 
-    sensors = [c for c in df.columns
-               if re.fullmatch(rf"{schema.SENSOR_PREFIX}\d{{3}}", c)]
+    sensors = [c for c in df.columns if re.fullmatch(rf"{schema.SENSOR_PREFIX}\d{{3}}", c)]
     if len(sensors) != schema.N_SENSORS:
-        raise ValueError(f"sensor block: {len(sensors)} cols, "
-                         f"expected {schema.N_SENSORS}")
+        raise ValueError(f"sensor block: {len(sensors)} cols, expected {schema.N_SENSORS}")
     non_float = [c for c in sensors if df[c].dtype != np.float64]
     if non_float:
         raise ValueError(f"non-float64 sensors: {non_float[:5]}...")
@@ -105,8 +106,7 @@ def missingness_drift(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
 
     frozen = pd.read_csv(snaps[-1], index_col=0)
     frozen.index = frozen.index.astype(str)
-    out = current.join(frozen[["missing_pct"]].rename(
-        columns={"missing_pct": "missing_snapshot"}))
+    out = current.join(frozen[["missing_pct"]].rename(columns={"missing_pct": "missing_snapshot"}))
     out["delta"] = out["missing_now"] - out["missing_snapshot"]
     out["flag"] = out["delta"].abs() > DRIFT_FLAG
     return out.sort_values("delta", key=abs, ascending=False), snaps[-1].parent.name
@@ -140,17 +140,17 @@ def main(argv=None):
     }
 
     run_dir, meta = tracking.make_run(
-        config={"script": "validate", "drift_flag": DRIFT_FLAG},
-        run_name="validate", note=args.note)
+        config={"script": "validate", "drift_flag": DRIFT_FLAG}, run_name="validate", note=args.note
+    )
     drift.to_csv(run_dir / "missingness_drift.csv")
     (run_dir / "validation_report.json").write_text(json.dumps(report, indent=2))
-    tracking.append_index(run_dir, {"type": "validate", **report,
-                                    "git_sha": meta["git_sha"]})
+    tracking.append_index(run_dir, {"type": "validate", **report, "git_sha": meta["git_sha"]})
 
     logger.info(f"[validate] {report}")
     if n_flags:
-        logger.warning(f"[validate] {n_flags} columns drifted past "
-                       f"{DRIFT_FLAG} — see missingness_drift.csv")
+        logger.warning(
+            f"[validate] {n_flags} columns drifted past {DRIFT_FLAG} — see missingness_drift.csv"
+        )
     logger.info(f"[validate] done | artifacts -> {run_dir}")
 
 

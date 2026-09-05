@@ -3,8 +3,10 @@
 One engine factory, one query runner, one registry loader, one
 registration helper. All other modules import from here.
 """
-from pathlib import Path
+
 import hashlib
+from pathlib import Path
+
 import pandas as pd
 from sqlalchemy import Engine, bindparam, create_engine, inspect, text
 
@@ -33,7 +35,7 @@ def assert_schema(engine: Engine) -> None:
             f"DB at {engine.url} is missing tables {sorted(missing)} — stale "
             "schema. Rebuild: rm data/secom.db && python -m semcon.db_ingest"
         )
-        
+
 
 def run_query(name: str, engine: Engine, **params) -> pd.DataFrame:
     """Run sql/<name>.sql with named parameters. The filename is the query name."""
@@ -55,9 +57,9 @@ def feature_columns(registry: pd.DataFrame) -> list[str]:
 
     X is always built from this list, never by dropping known non-features.
     """
-    mask = registry["role"].isin(
-        [schema.Role.FEATURE_RAW.value, schema.Role.FEATURE_ENG.value]
-    ) & (registry["status"] == schema.Status.ACTIVE.value)
+    mask = registry["role"].isin([schema.Role.FEATURE_RAW.value, schema.Role.FEATURE_ENG.value]) & (
+        registry["status"] == schema.Status.ACTIVE.value
+    )
     return registry.loc[mask, "column_name"].tolist()
 
 
@@ -68,12 +70,14 @@ def register_columns(rows: list[dict], engine: Engine) -> None:
     names = [r["column_name"] for r in rows]
     with engine.begin() as conn:
         conn.execute(
-            text("DELETE FROM column_registry WHERE column_name IN :names")
-            .bindparams(bindparam("names", expanding=True)),
+            text("DELETE FROM column_registry WHERE column_name IN :names").bindparams(
+                bindparam("names", expanding=True)
+            ),
             {"names": names},
         )
         pd.DataFrame(rows).to_sql("column_registry", conn, if_exists="append", index=False)
-        
+
+
 def retire_columns(names: list[str], reason: str, engine: Engine) -> None:
     """Mark registry columns excluded, with the reason. Frames never lose
     columns mid-pipeline — removal is a status change, not a deletion."""
@@ -87,8 +91,8 @@ def retire_columns(names: list[str], reason: str, engine: Engine) -> None:
             ).bindparams(bindparam("names", expanding=True)),
             {"status": schema.Status.EXCLUDED.value, "reason": reason, "names": names},
         )
-        
-       
+
+
 def data_fingerprint(engine: Engine) -> dict:
     """Content fingerprint of the data basis: latest raw-file hashes from
     ingestion_log plus the extraction-SQL hash.
@@ -104,6 +108,6 @@ def data_fingerprint(engine: Engine) -> dict:
         ),
         engine,
     )
-    raw = dict(zip(log["source_file"], log["source_sha256"]))
+    raw = dict(zip(log["source_file"], log["source_sha256"], strict=True))
     sql_hash = hashlib.sha256((SQL / "extract_wafers.sql").read_bytes()).hexdigest()
     return {"raw": raw, "extract_sql_sha256": sql_hash}

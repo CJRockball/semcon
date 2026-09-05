@@ -4,6 +4,7 @@ These tests assert on the live database and extraction, so run them after
 `make` (or at least `make ingest extract explore features validate`).
 One contract per test; the fixtures do the heavy lifting once per session.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -78,8 +79,9 @@ def test_ingestion_log_records_hashes(engine):
     assert len(log) >= 2, "one row per source file per load"
     hashes = log["source_sha256"].dropna().astype(str)
     assert not hashes.empty, "source_sha256 never populated"
-    assert hashes.str.fullmatch(r"[0-9a-fA-F]{16,64}").all(), \
+    assert hashes.str.fullmatch(r"[0-9a-fA-F]{16,64}").all(), (
         f"unexpected hash values: {hashes.head().tolist()}"
+    )
 
 
 # --- extract / silver -----------------------------------------------------------
@@ -106,11 +108,7 @@ def test_split_zone_counts(frame):
 
 
 def test_split_zone_fails(frame):
-    fails = (
-        frame.groupby("split")[schema.TARGET_COL]
-        .apply(lambda s: int(s.eq(1).sum()))
-        .to_dict()
-    )
+    fails = frame.groupby("split")[schema.TARGET_COL].apply(lambda s: int(s.eq(1).sum())).to_dict()
     assert fails == EXPECTED_FAILS, fails
     assert sum(fails.values()) == 104
 
@@ -142,7 +140,11 @@ def test_active_feature_contract(registry):
     active = feature_columns(registry)
     assert len(active) == 261, f"active features: {len(active)} != 261"
     leaked = set(active) & {
-        schema.KEY_COL, schema.TIME_COL, schema.TARGET_COL, "split", "is_fail",
+        schema.KEY_COL,
+        schema.TIME_COL,
+        schema.TARGET_COL,
+        "split",
+        "is_fail",
     }
     assert not leaked, f"non-features in active set: {leaked}"
 

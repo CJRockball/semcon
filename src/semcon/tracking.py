@@ -23,6 +23,7 @@ artifacts/runs/
     ├── pr_curve_holdout.png / conf_heatmap.png
     └── shap/ ...
 """
+
 import hashlib
 import json
 import re
@@ -43,7 +44,9 @@ def _git_sha() -> str:
     try:
         return subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout.strip()
     except Exception:
         return "unknown"
@@ -76,8 +79,9 @@ def hash_file(path: Path, algo: str = "sha256", chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
-def make_run(config: dict, run_name: str | None = None, note: str = "",
-             runs_root: Path | None = None) -> tuple[Path, dict]:
+def make_run(
+    config: dict, run_name: str | None = None, note: str = "", runs_root: Path | None = None
+) -> tuple[Path, dict]:
     """Create artifacts/runs/<timestamp>_<name>/ and write config.json."""
     runs_root = runs_root or ARTIFACTS / "runs"
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -97,8 +101,7 @@ def make_run(config: dict, run_name: str | None = None, note: str = "",
     return run_dir, meta
 
 
-def save_splits(run_dir: Path, df_train: pd.DataFrame,
-                df_test: pd.DataFrame) -> None:
+def save_splits(run_dir: Path, df_train: pd.DataFrame, df_test: pd.DataFrame) -> None:
     """Persist the exact split. Positional indices are meaningful because
     load_data sorts by timestamp and resets the index."""
     payload = {
@@ -110,16 +113,14 @@ def save_splits(run_dir: Path, df_train: pd.DataFrame,
     (run_dir / "splits.json").write_text(json.dumps(payload))
 
 
-def save_features(run_dir: Path, feats: list,
-                  stability: pd.Series | None = None) -> None:
+def save_features(run_dir: Path, feats: list, stability: pd.Series | None = None) -> None:
     payload = {"n_features": len(feats), "features": [str(f) for f in feats]}
     if stability is not None:
         payload["stability"] = {str(k): float(v) for k, v in stability.items()}
     (run_dir / "features.json").write_text(json.dumps(payload, indent=2))
 
 
-def append_index(run_dir: Path, metrics: dict,
-                 index_file: Path | None = None) -> None:
+def append_index(run_dir: Path, metrics: dict, index_file: Path | None = None) -> None:
     index_file = index_file or ARTIFACTS / "index.csv"
     row = pd.DataFrame([{"run_id": run_dir.name, **metrics}])
     if index_file.exists():
@@ -127,14 +128,19 @@ def append_index(run_dir: Path, metrics: dict,
     row.to_csv(index_file, index=False)
 
 
-def write_dataset_card(parquet_path: Path, df: pd.DataFrame,
-                       target: pd.Series | None = None) -> Path:
+def write_dataset_card(
+    parquet_path: Path, df: pd.DataFrame, target: pd.Series | None = None
+) -> Path:
     """Sidecar card, written by the PRODUCER at dataset creation."""
-    info = {"file": parquet_path.name, "sha256_16": hash_file(parquet_path)[:16],
-            "n_rows": len(df), "n_features": int(df.shape[1]),
-            "columns_md5_16": hashlib.md5("|".join(map(str, df.columns)).encode()).hexdigest()[:16]}
+    info = {
+        "file": parquet_path.name,
+        "sha256_16": hash_file(parquet_path)[:16],
+        "n_rows": len(df),
+        "n_features": int(df.shape[1]),
+        "columns_md5_16": hashlib.md5("|".join(map(str, df.columns)).encode()).hexdigest()[:16],
+    }
     if target is not None:
         info.update(n_fails=int(target.sum()), prevalence=float(target.mean()))
-    card = parquet_path.with_suffix(".dataset.json")     # dfX_v2.dataset.json
+    card = parquet_path.with_suffix(".dataset.json")  # dfX_v2.dataset.json
     card.write_text(json.dumps(info, indent=2))
     return card

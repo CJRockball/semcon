@@ -5,12 +5,20 @@ grid restart at the phase boundary, empty days kept in the volume series,
 the trend rule, the AICc-ranked grid contract, MASE arithmetic, rolling-origin
 baseline behavior, and the pre-registered sign check. Synthetic data only.
 """
+
 import numpy as np
 import pandas as pd
 
-from semcon.sarimax import (daily_volume, exog_tests, fit_arima, fit_orders,
-                            mase, rolling_origin, save_forecast_fig,
-                            windowed_mean)
+from semcon.sarimax import (
+    daily_volume,
+    exog_tests,
+    fit_arima,
+    fit_orders,
+    mase,
+    rolling_origin,
+    save_forecast_fig,
+    windowed_mean,
+)
 
 
 def test_windowed_mean_actual_n_and_restart():
@@ -27,7 +35,7 @@ def test_daily_volume_keeps_empty_days():
     ts = ["2024-01-01 08:00", "2024-01-01 09:00", "2024-01-03 10:00"]
     df = pd.DataFrame({"timestamp": ts, "target": [0, 1, 0]})
     daily = daily_volume(df, i_hold=3)
-    assert len(daily) == 3                      # Jan 2 is a real zero-wafer day
+    assert len(daily) == 3  # Jan 2 is a real zero-wafer day
     assert (daily["sample_size"] == 0).sum() == 1
     assert daily["total_fail"].sum() == 1
 
@@ -69,10 +77,9 @@ def test_exog_tests_recovers_negative_sign():
     rng = np.random.default_rng(1)
     n = 120
     exog = pd.DataFrame({"f_miss_clq14": rng.normal(size=n)})
-    y = pd.Series(0.07 - 0.5 * exog["f_miss_clq14"].to_numpy()
-                  + rng.normal(scale=0.01, size=n))
+    y = pd.Series(0.07 - 0.5 * exog["f_miss_clq14"].to_numpy() + rng.normal(scale=0.01, size=n))
     tab = exog_tests(y, exog, (1, 0, 0))
-    assert tab["exog"].head(1).item() == "(none)"   # baseline is row zero
+    assert tab["exog"].head(1).item() == "(none)"  # baseline is row zero
     row = tab.loc[tab["exog"] == "f_miss_clq14"].squeeze()
     assert row["coef"] < 0
     assert row["sign_check"] == "ok (neg, as predicted)"
@@ -82,7 +89,8 @@ def test_save_forecast_fig_breach_mask(tmp_path):
     train = pd.Series(np.linspace(5, 6, 27))
     actual = pd.Series([5.5, 5.6, 9.0, 5.4, 5.5])  # index 2 breaches
     out = tmp_path / "fc.png"
-    breach = save_forecast_fig(train, actual, np.full(5, 5.5),
-                               np.full(5, 5.0), np.full(5, 6.0), "t", out)
+    breach = save_forecast_fig(
+        train, actual, np.full(5, 5.5), np.full(5, 5.0), np.full(5, 6.0), "t", out
+    )
     assert list(breach) == [False, False, True, False, False]
     assert out.exists() and out.stat().st_size > 0

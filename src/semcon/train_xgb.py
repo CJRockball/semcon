@@ -11,6 +11,7 @@ Deferred by design:
   - is_fail encoding lives here until Phase 4's validate.py owns the
     silver boundary
 """
+
 import argparse
 import logging
 import sys
@@ -48,28 +49,45 @@ from semcon.evaluation import (
 from semcon.explain import save_shap_plots
 from semcon.extract import extract
 from semcon.feature_eng import build_features
-from semcon.paths import ARTIFACTS, LOGS
+from semcon.paths import LOGS
 from semcon.selection import select_features
 from semcon.snapshots import write_gold_snapshot
 from semcon.tracking import append_index, make_run, save_features, save_splits
 from semcon.utils import setup_logging
 from semcon.validate import ensure_is_fail
-    
+
 logger = logging.getLogger("semcon")
 
 
 def parse_args(argv=None):
-    p = argparse.ArgumentParser(description='SECOM XGBoost training')
-    p.add_argument('--run-name', type=str, default=None,
-               help='experiment slug for the run folder, e.g. baseline')
-    p.add_argument('--note', type=str, default='',
-               help='free-text note stored in config.json and the runs index')
-    p.add_argument('--no-selection', action='store_false', dest='use_selection',
-                   help='all-feature baseline instead of fold-internal selection')
-    p.add_argument('--repeats', type=int, default=3)
-    p.add_argument('--set', action='append', default=[], metavar='KEY=VALUE',
-                   dest='overrides',
-                   help='override a model param, repeatable: --set max_depth=5')
+    p = argparse.ArgumentParser(description="SECOM XGBoost training")
+    p.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="experiment slug for the run folder, e.g. baseline",
+    )
+    p.add_argument(
+        "--note",
+        type=str,
+        default="",
+        help="free-text note stored in config.json and the runs index",
+    )
+    p.add_argument(
+        "--no-selection",
+        action="store_false",
+        dest="use_selection",
+        help="all-feature baseline instead of fold-internal selection",
+    )
+    p.add_argument("--repeats", type=int, default=3)
+    p.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        dest="overrides",
+        help="override a model param, repeatable: --set max_depth=5",
+    )
     return p.parse_args(argv)
 
 
@@ -84,7 +102,7 @@ def load_data(engine, test_split: int, time_split: int):
     df = extract(engine)
     df, eng_rows = build_features(df)
     register_columns(eng_rows, engine)  # idempotent upsert — self-healing
-                                        # if feature_eng hasn't run on this DB
+    # if feature_eng hasn't run on this DB
 
     # Phase 4: is_fail moves to validate.py (silver boundary owns encoding)
     df = ensure_is_fail(df, engine)
@@ -95,8 +113,8 @@ def load_data(engine, test_split: int, time_split: int):
         raise ValueError(f"registry-active list contains non-features: {sorted(bad)}")
 
     df = df.sort_values(schema.TIME_COL).reset_index(drop=True)
-    df_train = df.iloc[:-time_split, :]          # drop regime tail (EDA finding)
-    df_test = df_train.iloc[-test_split:, :]     # last holdout_n rows
+    df_train = df.iloc[:-time_split, :]  # drop regime tail (EDA finding)
+    df_test = df_train.iloc[-test_split:, :]  # last holdout_n rows
     df_train = df_train.iloc[:-test_split, :]
 
     if CUTOFF is not None:
@@ -109,17 +127,22 @@ def load_data(engine, test_split: int, time_split: int):
     return df_train, df_test, features, data_fingerprint(engine)
 
 
-def run_cv(df_train: pd.DataFrame, features: list[str], xgb_params: dict,
-           random: int, kfolds: int, repeats: int, use_selection: bool) \
-        -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
+def run_cv(
+    df_train: pd.DataFrame,
+    features: list[str],
+    xgb_params: dict,
+    random: int,
+    kfolds: int,
+    repeats: int,
+    use_selection: bool,
+) -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
 
     df_y = df_train["is_fail"].copy()
     df_X = df_train[features].copy(deep=True)
 
-    rskf = RepeatedStratifiedKFold(n_splits=kfolds, n_repeats=repeats,
-                                   random_state=random)
+    rskf = RepeatedStratifiedKFold(n_splits=kfolds, n_repeats=repeats, random_state=random)
 
-    oof = np.zeros((repeats, len(df_X)))   # one OOF vector per repeat
+    oof = np.zeros((repeats, len(df_X)))  # one OOF vector per repeat
     fold_metrics = []
     sel_count = pd.Series(0, index=df_X.columns)
     for i, (train_index, valid_index) in enumerate(rskf.split(df_X, df_y)):
@@ -144,39 +167,49 @@ def run_cv(df_train: pd.DataFrame, features: list[str], xgb_params: dict,
 
         model = XGBClassifier(
             **xgb_params,
-            eval_metric=['logloss', 'aucpr'],
+            eval_metric=["logloss", "aucpr"],
             scale_pos_weight=float((ytrain == 0).sum() / (ytrain == 1).sum()),
             callbacks=[es],
-            device='cuda',
+            device="cuda",
         )
 
-        model.fit(Xtrain, ytrain,
-                  eval_set=[(Xvalid, yvalid)],
-                  verbose=100)
+        model.fit(Xtrain, ytrain, eval_set=[(Xvalid, yvalid)], verbose=100)
 
         ypred_proba = model.predict_proba(Xvalid)
         oof[i // kfolds, valid_index] = ypred_proba[:, 1]
 
-        fold_metrics.append({
-            'repeat': i // kfolds, 'fold': i % kfolds,
-            'aucpr': average_precision_score(yvalid, ypred_proba[:, 1]),
-            'rocauc': roc_auc_score(yvalid, ypred_proba[:, 1]),
-            'brier': brier_score_loss(yvalid, ypred_proba[:, 1]),
-            'best_iter': model.best_iteration,
-            'n_feats': Xtrain.shape[1],
-        })
+        fold_metrics.append(
+            {
+                "repeat": i // kfolds,
+                "fold": i % kfolds,
+                "aucpr": average_precision_score(yvalid, ypred_proba[:, 1]),
+                "rocauc": roc_auc_score(yvalid, ypred_proba[:, 1]),
+                "brier": brier_score_loss(yvalid, ypred_proba[:, 1]),
+                "best_iter": model.best_iteration,
+                "n_feats": Xtrain.shape[1],
+            }
+        )
 
     res = pd.DataFrame(fold_metrics)
-    logger.info(res.groupby('repeat')[['aucpr', 'rocauc', 'brier']].mean().round(4))
-    logger.info(res[['aucpr', 'rocauc', 'brier']].agg(['mean', 'std']).round(4))
+    logger.info(res.groupby("repeat")[["aucpr", "rocauc", "brier"]].mean().round(4))
+    logger.info(res[["aucpr", "rocauc", "brier"]].agg(["mean", "std"]).round(4))
     return res, oof, sel_count
 
 
-def refit_final(df_train: pd.DataFrame, df_test: pd.DataFrame,
-                features: list[str], oof: np.ndarray, res: pd.DataFrame,
-                xgb_params: dict, sel_count: pd.Series, kfolds: int,
-                repeats: int, use_selection: bool, random: int, out: Path) \
-        -> tuple[XGBClassifier, list, np.ndarray, pd.Series | None]:
+def refit_final(
+    df_train: pd.DataFrame,
+    df_test: pd.DataFrame,
+    features: list[str],
+    oof: np.ndarray,
+    res: pd.DataFrame,
+    xgb_params: dict,
+    sel_count: pd.Series,
+    kfolds: int,
+    repeats: int,
+    use_selection: bool,
+    random: int,
+    out: Path,
+) -> tuple[XGBClassifier, list, np.ndarray, pd.Series | None]:
 
     stability = None
     if use_selection:
@@ -191,55 +224,58 @@ def refit_final(df_train: pd.DataFrame, df_test: pd.DataFrame,
     X_hold = df_test[features].copy()
 
     feats = select_features(df_X, df_y) if use_selection else list(features)
-    best_iter = int(np.median(res['best_iter']))
 
     final = XGBClassifier(
         **xgb_params,
         scale_pos_weight=float((df_y == 0).sum() / (df_y == 1).sum()),
-        device='cuda', random_state=random,
+        device="cuda",
+        random_state=random,
     )
     final.fit(df_X[feats], df_y)
 
     final.get_booster().save_model(str(out / "model.ubj"))
     p_hold = final.predict_proba(X_hold[feats])[:, 1]
     np.save(out / "p_hold.npy", p_hold)
-    logger.info(f'HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  '
-                f'rocauc={roc_auc_score(y_hold, p_hold):.4f}  '
-                f'brier={brier_score_loss(y_hold, p_hold):.4f}')
+    logger.info(
+        f"HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  "
+        f"rocauc={roc_auc_score(y_hold, p_hold):.4f}  "
+        f"brier={brier_score_loss(y_hold, p_hold):.4f}"
+    )
 
-    np.save(out / 'oof_xgb1.npy', oof)
-    res.to_csv(out / 'cv_metrics_xgb1.csv')
+    np.save(out / "oof_xgb1.npy", oof)
+    res.to_csv(out / "cv_metrics_xgb1.csv")
     return final, feats, p_hold, stability
 
 
-def evaluate(df_train: pd.DataFrame, df_test: pd.DataFrame, oof: np.ndarray,
-             p_hold: np.ndarray, out: Path) -> dict:
+def evaluate(
+    df_train: pd.DataFrame, df_test: pd.DataFrame, oof: np.ndarray, p_hold: np.ndarray, out: Path
+) -> dict:
 
     df_y = df_train["is_fail"].copy()
     y_hold = df_test["is_fail"].copy()
 
     oof_mean = oof.mean(axis=0)
-    thr = tune_threshold(df_y, oof_mean, criterion='mcc')
+    thr = tune_threshold(df_y, oof_mean, criterion="mcc")
     summary_oof = classification_summary(df_y, oof_mean, thr)
-    summary_oof.to_csv(out / 'summary_oof.csv')
+    summary_oof.to_csv(out / "summary_oof.csv")
     summary_hold = classification_summary(y_hold, p_hold, thr)
-    summary_hold.to_csv(out / 'summary_hold.csv')
+    summary_hold.to_csv(out / "summary_hold.csv")
     logger.info(summary_oof)
     logger.info(summary_hold)
-    save_pr_curve(y_hold, p_hold, out / 'pr_curve_holdout.png')
-    save_confusion_heatmap(y_hold, p_hold, thr, out / 'conf_heatmap.png')
+    save_pr_curve(y_hold, p_hold, out / "pr_curve_holdout.png")
+    save_confusion_heatmap(y_hold, p_hold, thr, out / "conf_heatmap.png")
 
-    q = float(summary_oof[['tp', 'fp']].sum() / len(df_y))
+    q = float(summary_oof[["tp", "fp"]].sum() / len(df_y))
     r_value = recall_at_flagrate(y_hold, p_hold, q=q)
-    logger.info(f'recall_at_flagrate: {r_value}')
+    logger.info(f"recall_at_flagrate: {r_value}")
 
     pred_hold_stats = pd.Series(p_hold).describe()
-    pred_hold_stats.to_csv(out / 'pred_hold_stats.csv')
+    pred_hold_stats.to_csv(out / "pred_hold_stats.csv")
     oof_mean_stats = pd.Series(oof_mean).describe()
-    oof_mean_stats.to_csv(out / 'oof_mean_stats.csv')
+    oof_mean_stats.to_csv(out / "oof_mean_stats.csv")
 
     pr_oof_hold = operating_points(df_y, oof_mean)
-    pr_oof_hold.to_csv(out / 'pr_oof_hold.csv')
+    pr_oof_hold.to_csv(out / "pr_oof_hold.csv")
     return {
         "threshold": float(thr),
         "holdout_aucpr": float(average_precision_score(y_hold, p_hold)),
@@ -257,8 +293,7 @@ def main(argv=None):
     args = parse_args(argv)
     global logger
     logger = setup_logging(logfile=LOGS / "ml.log")
-    logger.info(f'[train_xgb] start | selection={args.use_selection} '
-                f'repeats={args.repeats}')
+    logger.info(f"[train_xgb] start | selection={args.use_selection} repeats={args.repeats}")
 
     cfg = load_config()
     if args.overrides:
@@ -268,27 +303,49 @@ def main(argv=None):
     engine = get_engine()
     xgb_params = cfg.model.model_dump()
     run_dir, run_meta = make_run(
-        config={"script": "train_xgb", "use_selection": args.use_selection,
-                "repeats": args.repeats, "kfolds": cfg.pipeline.kfolds,
-                "tail_n": cfg.pipeline.tail_n, "holdout_n": cfg.pipeline.holdout_n,
-                "model": xgb_params, "random_state": cfg.pipeline.seed},
+        config={
+            "script": "train_xgb",
+            "use_selection": args.use_selection,
+            "repeats": args.repeats,
+            "kfolds": cfg.pipeline.kfolds,
+            "tail_n": cfg.pipeline.tail_n,
+            "holdout_n": cfg.pipeline.holdout_n,
+            "model": xgb_params,
+            "random_state": cfg.pipeline.seed,
+        },
         run_name=args.run_name or ("xgb_sel" if args.use_selection else "xgb_base"),
         note=args.note,
     )
 
     df_train, df_test, features, fingerprint = load_data(
-        engine, cfg.pipeline.holdout_n, cfg.pipeline.tail_n)
+        engine, cfg.pipeline.holdout_n, cfg.pipeline.tail_n
+    )
     save_splits(run_dir, df_train, df_test)
 
-    res, oof, sel_count = run_cv(df_train, features, xgb_params, cfg.pipeline.seed,
-                                 kfolds=cfg.pipeline.kfolds,
-                                 repeats=args.repeats,
-                                 use_selection=args.use_selection)
+    res, oof, sel_count = run_cv(
+        df_train,
+        features,
+        xgb_params,
+        cfg.pipeline.seed,
+        kfolds=cfg.pipeline.kfolds,
+        repeats=args.repeats,
+        use_selection=args.use_selection,
+    )
 
     final, feats, p_hold, stability = refit_final(
-        df_train, df_test, features, oof, res, xgb_params, sel_count,
-        kfolds=cfg.pipeline.kfolds, repeats=args.repeats,
-        use_selection=args.use_selection, random=cfg.pipeline.seed, out=run_dir)
+        df_train,
+        df_test,
+        features,
+        oof,
+        res,
+        xgb_params,
+        sel_count,
+        kfolds=cfg.pipeline.kfolds,
+        repeats=args.repeats,
+        use_selection=args.use_selection,
+        random=cfg.pipeline.seed,
+        out=run_dir,
+    )
 
     extra = set(feats) - set(features)
     if extra:
@@ -298,9 +355,13 @@ def main(argv=None):
     snapshot_id = write_gold_snapshot(
         df_train[[schema.KEY_COL, *feats, "is_fail"]],
         engine,
-        config={"cutoff": str(CUTOFF), "tail_n": cfg.pipeline.tail_n,
-                "holdout_n": cfg.pipeline.holdout_n, "seed": cfg.pipeline.seed,
-                "use_selection": args.use_selection},
+        config={
+            "cutoff": str(CUTOFF),
+            "tail_n": cfg.pipeline.tail_n,
+            "holdout_n": cfg.pipeline.holdout_n,
+            "seed": cfg.pipeline.seed,
+            "use_selection": args.use_selection,
+        },
     )
 
     save_features(run_dir, feats, stability)
@@ -313,17 +374,21 @@ def main(argv=None):
     )
     logger.info("Top SHAP features:\n%s", shap_summary.head(15).to_string())
 
-    append_index(run_dir, {
-        "run_name": args.run_name, "note": args.note,
-        "git_sha": run_meta["git_sha"],
-        "data": fingerprint["raw"].get("secom.data", "")[:16],
-        "snapshot_id": snapshot_id,
-        "cv_aucpr_mean": float(res["aucpr"].mean()),
-        "cv_aucpr_std": float(res["aucpr"].std()),
-        **holdout_metrics,
-    })
+    append_index(
+        run_dir,
+        {
+            "run_name": args.run_name,
+            "note": args.note,
+            "git_sha": run_meta["git_sha"],
+            "data": fingerprint["raw"].get("secom.data", "")[:16],
+            "snapshot_id": snapshot_id,
+            "cv_aucpr_mean": float(res["aucpr"].mean()),
+            "cv_aucpr_std": float(res["aucpr"].std()),
+            **holdout_metrics,
+        },
+    )
 
-    logger.info(f'[train_xgb] end')
+    logger.info("[train_xgb] end")
 
 
 if __name__ == "__main__":

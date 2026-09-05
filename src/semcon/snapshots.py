@@ -9,11 +9,12 @@ closing the chain: raw sha -> ingestion_log -> snapshot -> run -> model.
 Silver snapshots are skipped by design: bronze + SQL + pinned code
 recomputes them deterministically; the fingerprint vouches.
 """
+
 import hashlib
 import io
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 from sqlalchemy import Engine
@@ -28,9 +29,7 @@ logger = logging.getLogger("semcon")
 SNAPSHOTS = ROOT / "data" / "snapshots"
 
 
-def write_gold_snapshot(
-    df: pd.DataFrame, engine: Engine, config: dict | None = None
-) -> str:
+def write_gold_snapshot(df: pd.DataFrame, engine: Engine, config: dict | None = None) -> str:
     """Persist the training matrix immutably; return the snapshot_id.
 
     config: the run's decision dict (cutoff, thresholds, seeds) — recorded
@@ -41,7 +40,7 @@ def write_gold_snapshot(
     payload = buf.getvalue()
     sha = hashlib.sha256(payload).hexdigest()
 
-    snapshot_id = f"{datetime.now(timezone.utc):%Y%m%d_%H%M%S}_{sha[:8]}"
+    snapshot_id = f"{datetime.now(UTC):%Y%m%d_%H%M%S}_{sha[:8]}"
     out = SNAPSHOTS / "gold" / snapshot_id
     out.mkdir(parents=True, exist_ok=False)
 
@@ -52,7 +51,7 @@ def write_gold_snapshot(
     manifest = {
         "snapshot_id": snapshot_id,
         "layer": "gold",
-        "created": ts if (ts := datetime.now(timezone.utc)) else None,
+        "created": ts if (ts := datetime.now(UTC)) else None,
         "rows": int(df.shape[0]),
         "cols": int(df.shape[1]),
         "git_sha": git_sha(),
@@ -65,6 +64,9 @@ def write_gold_snapshot(
 
     logger.info(
         "[snapshots] gold %s: %d rows x %d cols, sha256 %s",
-        snapshot_id, df.shape[0], df.shape[1], sha[:16],
+        snapshot_id,
+        df.shape[0],
+        df.shape[1],
+        sha[:16],
     )
     return snapshot_id

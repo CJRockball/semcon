@@ -1,9 +1,9 @@
 """First test module for the repo: the SPC math that must be exactly right."""
+
 import numpy as np
 import pandas as pd
 
-from semcon.spc import (binomial_limits, compute_limits, ewma, moving_range,
-                        screening, we_rules)
+from semcon.spc import binomial_limits, compute_limits, ewma, moving_range, screening, we_rules
 
 
 def test_robust_limits_resist_outliers():
@@ -20,10 +20,12 @@ def test_screening_flags_shifted_feature_only():
     rng = np.random.default_rng(1)
     n1, n_hold, n_tail = 1309, 231, 27  # mirror the real three-zone split
     n2 = n_hold + n_tail
-    df = pd.DataFrame({
-        "calm": rng.normal(size=n1 + n2),
-        "drift": np.r_[rng.normal(size=n1), rng.normal(2.0, 1.0, n2)],
-    })
+    df = pd.DataFrame(
+        {
+            "calm": rng.normal(size=n1 + n2),
+            "drift": np.r_[rng.normal(size=n1), rng.normal(2.0, 1.0, n2)],
+        }
+    )
     lim = compute_limits(df.iloc[:n1])
     scr = screening(df, ["calm", "drift"], lim, i_hold=n1, i_tail=n1 + n_hold)
     assert scr.loc["drift", "delta"] > 0.08
@@ -69,15 +71,20 @@ def test_binomial_lcl_clips_at_zero():
     assert lcl[0] == 0.0
     assert ucl[0] > 0.067
 
+
 def test_plot_overview_smoke(tmp_path):
     from semcon.spc import plot_overview
+
     rng = np.random.default_rng(4)
-    screen = pd.DataFrame({
-        "degenerate": False,
-        "ooc_p1": rng.uniform(0, 0.02, 12),
-        "ooc_p2": rng.uniform(0, 0.3, 12),
-        "delta": rng.uniform(-0.01, 0.3, 12),
-    }, index=[str(i) for i in range(12)])
+    screen = pd.DataFrame(
+        {
+            "degenerate": False,
+            "ooc_p1": rng.uniform(0, 0.02, 12),
+            "ooc_p2": rng.uniform(0, 0.3, 12),
+            "delta": rng.uniform(-0.01, 0.3, 12),
+        },
+        index=[str(i) for i in range(12)],
+    )
     out = tmp_path / "overview.png"
     plot_overview(screen, {"3", "7"}, out)
     assert out.exists() and out.stat().st_size > 0
