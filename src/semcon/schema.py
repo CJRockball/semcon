@@ -20,7 +20,8 @@ METADATA_COLS = [TIME_COL, SPLIT_COL]
 NON_FEATURE_COLS = [KEY_COL, TARGET_COL, TIME_COL, SPLIT_COL]
 
 EXPECTED_WAFERS = 1567  # external data contract for the SECOM snapshot
-
+EXPECTED_CLQ14 = 794
+EXPECTED_CLQ23 = 715
 
 class Role(enum.StrEnum):
     KEY = "key"

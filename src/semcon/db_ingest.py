@@ -93,10 +93,10 @@ def setup_db(engine: Engine) -> None:
     metadata.create_all(engine)
 
 
-def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_data(data_dir=DATA_RAW, expected_wafers: int = schema.EXPECTED_WAFERS):
     """Load raw files. Errors propagate — a failed load must die loudly."""
     dfX = pd.read_csv(
-        DATA_RAW / "secom.data",
+        data_dir / "secom.data",
         sep=r"\s+",
         header=None,
         na_values=["NaN"],
@@ -105,7 +105,7 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     dfX.insert(0, schema.KEY_COL, range(1, len(dfX) + 1))
 
     dfy = pd.read_csv(
-        DATA_RAW / "secom_labels.data",
+        data_dir / "secom_labels.data",
         sep=r"\s+",
         header=None,
         names=[schema.TARGET_COL, schema.TIME_COL],
@@ -117,9 +117,9 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     )
     dfy.insert(0, schema.KEY_COL, range(1, len(dfy) + 1))
 
-    if not len(dfX) == len(dfy) == schema.EXPECTED_WAFERS:
+    if not len(dfX) == len(dfy) == expected_wafers:
         raise ValueError(
-            f"Expected {schema.EXPECTED_WAFERS} wafers, got {len(dfX)} readings / {len(dfy)} labels"
+            f"Expected {expected_wafers} wafers, got {len(dfX)} readings / {len(dfy)} labels"
         )
     if dfX.shape[1] != schema.N_SENSORS + 1:
         raise ValueError(f"Expected {schema.N_SENSORS} sensors, got {dfX.shape[1] - 1}")
@@ -179,13 +179,13 @@ def build_registry(dfX: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def insert_data(dfX, dfy, registry, engine: Engine) -> None:
+def insert_data(dfX, dfy, registry, engine: Engine, data_dir=DATA_RAW) -> None:
     log = pd.DataFrame(
         [
             {
                 "load_ts": datetime.now(UTC),
                 "source_file": "secom.data",
-                "source_sha256": file_sha256(DATA_RAW / "secom.data"),
+                "source_sha256": file_sha256(data_dir / "secom.data"),
                 "table_name": "sensor_readings",
                 "rows_inserted": len(dfX),
                 "git_sha": git_sha(),
@@ -193,7 +193,7 @@ def insert_data(dfX, dfy, registry, engine: Engine) -> None:
             {
                 "load_ts": datetime.now(UTC),
                 "source_file": "secom_labels.data",
-                "source_sha256": file_sha256(DATA_RAW / "secom_labels.data"),
+                "source_sha256": file_sha256(data_dir / "secom_labels.data"),
                 "table_name": "wafer_labels",
                 "rows_inserted": len(dfy),
                 "git_sha": git_sha(),
