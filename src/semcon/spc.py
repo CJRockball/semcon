@@ -573,7 +573,7 @@ def plot_pchart(df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_png
     for b in (i_hold, i_tail):
         ax.axvline(b, color="k", ls=":", lw=1)
     ax.set_title(
-        "Yield p-chart - LCL clips at 0, so improvement (the 0/27 tail) "
+        f"Yield p-chart - LCL clips at 0, so improvement (the 0/{i_tail} tail) "
         "cannot alarm; excursions can"
     )
     ax.legend(fontsize=8)

@@ -91,6 +91,9 @@ ignore = ["E501"]  # line length handled by the formatter
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers =[
+    "local_data: requires the real SECOM database; run locally only",
+]
 
 [tool.mypy]
 python_version = "3.11"

@@ -615,7 +615,3 @@ def _in_ipykernel() -> bool:
 if __name__ == "__main__" and not _in_ipykernel():
     main([])
 
-# %% Interactive cells:
-# df, i_hold, i_tail = load_data(231, 27)
-# then call seasonal_volume / failrate_arima / channel_drift with your own
-# figs/summaries dirs, or just run main()

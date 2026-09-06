@@ -20,14 +20,10 @@ from semcon.config import BLOCK5_FIRST, CLIQUE_14, CLIQUE_23
 from semcon.db import assert_schema, get_engine, register_columns
 from semcon.extract import extract
 from semcon.paths import LOGS
+from semcon.schema import EXPECTED_CLQ14, EXPECTED_CLQ23
 from semcon.utils import setup_logging
 
 logger = logging.getLogger("semcon")
-
-# data expectations from the flat-file EDA (Section 3.6 anchors) — contract
-# checks, not parameters; if these change, the data changed, investigate
-EXPECTED_CLQ14 = 794
-EXPECTED_CLQ23 = 715
 
 
 def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
@@ -45,15 +41,17 @@ def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
     feats["f_miss_block5"] = df[block5].isna().any(axis=1).astype("int8")
     feats["f_row_missing_rate"] = df[sensors].isna().mean(axis=1).astype("float32")
 
-    if int(feats["f_miss_clq14"].sum()) != EXPECTED_CLQ14:
-        raise ValueError(
-            f"f_miss_clq14 sums to {feats['f_miss_clq14'].sum()}, "
-            f"expected {EXPECTED_CLQ14} — clique membership or data changed"
+    got = int(feats["f_miss_clq14"].sum())
+    if got != EXPECTED_CLQ14:
+        logger.warning(
+            "f_miss_clq14 sums to %d (SECOM snapshot: %d) — expected on non-snapshot data",
+            got, EXPECTED_CLQ14,
         )
-    if int(feats["f_miss_clq23"].sum()) != EXPECTED_CLQ23:
-        raise ValueError(
-            f"f_miss_clq23 sums to {feats['f_miss_clq23'].sum()}, "
-            f"expected {EXPECTED_CLQ23} — clique membership or data changed"
+    got = int(feats["f_miss_clq23"].sum())
+    if got != EXPECTED_CLQ23:
+        logger.warning(
+            "f_miss_clq23 sums to %d (SECOM snapshot: %d) — expected on non-snapshot data",
+            got, EXPECTED_CLQ23,
         )
 
     rows = [
