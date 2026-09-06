@@ -1,7 +1,7 @@
 """Data-layer contract tests: ingest -> extract -> registry -> features -> labels.
 
 These tests assert on the live database and extraction, so run them after
-`make` (or at least `make ingest extract explore features validate`).
+`make` (or at least a partial `make ingest extract explore features validate`).
 One contract per test; the fixtures do the heavy lifting once per session.
 """
 
