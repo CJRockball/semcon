@@ -9,20 +9,16 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 from sqlalchemy import inspect
 
 from semcon import schema
-from semcon.db import feature_columns
+from semcon.db import feature_columns, load_registry
+from semcon.extract import extract
+from semcon.feature_eng import build_features
 from semcon.validate import ensure_is_fail
 
 ENGINEERED = ["f_miss_clq14", "f_miss_clq23", "f_miss_block5", "f_row_missing_rate"]
-
-
-# @pytest.fixture(scope="session")
-# def model_frame(frame):
-#     """Silver + engineered features (the train_xgb input composition)."""
-#     out, _registry_rows = build_features(frame)
-#     return out
 
 
 def _names(reg: pd.DataFrame) -> pd.Index:
