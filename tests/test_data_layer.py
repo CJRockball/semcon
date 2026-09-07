@@ -1,7 +1,7 @@
 """Data-layer contract tests: ingest -> extract -> registry -> features -> labels.
 
 These tests assert on the live database and extraction, so run them after
-`make` (or at least `make ingest extract explore features validate`).
+`make` (or at least a partial `make ingest extract explore features validate`).
 One contract per test; the fixtures do the heavy lifting once per session.
 """
 
@@ -16,13 +16,6 @@ from semcon.db import feature_columns
 from semcon.validate import ensure_is_fail
 
 ENGINEERED = ["f_miss_clq14", "f_miss_clq23", "f_miss_block5", "f_row_missing_rate"]
-
-
-# @pytest.fixture(scope="session")
-# def model_frame(frame):
-#     """Silver + engineered features (the train_xgb input composition)."""
-#     out, _registry_rows = build_features(frame)
-#     return out
 
 
 def _names(reg: pd.DataFrame) -> pd.Index:
