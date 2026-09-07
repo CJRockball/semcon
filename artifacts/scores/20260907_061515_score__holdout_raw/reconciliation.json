@@ -1,0 +1,7 @@
+{
+  "reference": "p_hold.npy",
+  "column": "score_raw",
+  "n_reference": 231,
+  "n_scored": 231,
+  "max_abs_diff": 0.7075972557067871
+}

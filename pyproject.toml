@@ -75,6 +75,8 @@ semcon-explore = "semcon.explore:main"
 semcon-features = "semcon.feature_eng:main"
 semcon-train_xgb = "semcon.train_xgb:main"
 semcon-calibrate = "semcon.calibrate:main"
+semcon-simulate = "semcon.simulate_lots:main"
+semcon-score = "semcon.score:main"
 
 semcon-spc = "semcon.spc:main"
 semcon-sarimax = "semcon.sarimax:main"

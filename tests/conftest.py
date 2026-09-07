@@ -11,16 +11,18 @@ from semcon.feature_eng import build_features
 N_WAFERS = 20
 FIXTURE_CUTOFF_OFFSET = pd.Timedelta(minutes=30)
 
+
 def _write_raw(raw):
     rng = np.random.default_rng(7)
     X = rng.normal(0.5, 0.1, size=(N_WAFERS, schema.N_SENSORS))
-    X[[3, 4, 5], 0:2] = np.nan          # planted clique: s001+s002 missing together
+    X[[3, 4, 5], 0:2] = np.nan  # planted clique: s001+s002 missing together
     pd.DataFrame(X).to_csv(raw / "secom.data", sep=" ", header=False, index=False)
     ts = pd.date_range("2008-07-25 00:00:00", periods=N_WAFERS, freq="h")
     labels = [-1] * N_WAFERS
     labels[2] = labels[6] = labels[13] = 1
     pd.DataFrame({"y": labels, "t": ts.strftime("%d/%m/%Y %H:%M:%S")}).to_csv(
-        raw / "secom_labels.data", sep=" ", header=False, index=False)
+        raw / "secom_labels.data", sep=" ", header=False, index=False
+    )
     return ts
 
 
@@ -47,7 +49,7 @@ def frame(synthetic_env):
     eng, ts = synthetic_env
     return extract(
         eng,
-        cutoff=str(ts[12] - pd.Timedelta(minutes=30)),         # between wafer 12 and 13
+        cutoff=str(ts[12] - pd.Timedelta(minutes=30)),  # between wafer 12 and 13
         exclude_after=str(ts[17] - pd.Timedelta(minutes=30)),  # between wafer 17 and 18
     )
 
@@ -55,6 +57,7 @@ def frame(synthetic_env):
 @pytest.fixture(scope="session")
 def monkeypatch_session():
     from _pytest.monkeypatch import MonkeyPatch
+
     mp = MonkeyPatch()
     yield mp
     mp.undo()
@@ -73,4 +76,3 @@ def model_frame(frame, synthetic_env):
 def registry(model_frame, synthetic_env):
     eng, _ts = synthetic_env
     return load_registry(eng)
-

@@ -45,13 +45,15 @@ def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
     if got != EXPECTED_CLQ14:
         logger.warning(
             "f_miss_clq14 sums to %d (SECOM snapshot: %d) — expected on non-snapshot data",
-            got, EXPECTED_CLQ14,
+            got,
+            EXPECTED_CLQ14,
         )
     got = int(feats["f_miss_clq23"].sum())
     if got != EXPECTED_CLQ23:
         logger.warning(
             "f_miss_clq23 sums to %d (SECOM snapshot: %d) — expected on non-snapshot data",
-            got, EXPECTED_CLQ23,
+            got,
+            EXPECTED_CLQ23,
         )
 
     rows = [

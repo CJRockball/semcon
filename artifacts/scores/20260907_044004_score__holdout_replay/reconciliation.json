@@ -1,0 +1,7 @@
+{
+  "reference": "p_hold_cal.npy",
+  "column": "p_cal",
+  "n_reference": 231,
+  "n_scored": 231,
+  "max_abs_diff": 0.20144358536214316
+}

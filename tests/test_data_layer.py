@@ -60,7 +60,6 @@ def test_frame_shape(frame, engine):
     assert frame.shape[0] == n
 
 
-
 # --- extract / silver -----------------------------------------------------------
 
 
@@ -80,9 +79,11 @@ def test_split_zone_fails(frame, engine):
     assert (fails >= 0).all()
     assert set(fails.index) == {"cv", "holdout", "excluded"}
     # ...must equal the fail total in the labels table (source of truth)
-    n_labels = int(pd.read_sql(
-        f"SELECT COUNT(*) AS n FROM wafer_labels WHERE {schema.TARGET_COL} = 1", engine
-    )["n"][0])
+    n_labels = int(
+        pd.read_sql(
+            f"SELECT COUNT(*) AS n FROM wafer_labels WHERE {schema.TARGET_COL} = 1", engine
+        )["n"][0]
+    )
     assert int(fails.sum()) == n_labels
     # design decision under test: excluded zone carries no fails
     assert fails["excluded"] == 0
@@ -95,6 +96,7 @@ def test_split_boundaries_respected(frame):
     zones = frame.groupby("split")[schema.TIME_COL]
     assert zones.get_group("cv").max() < cutoff <= zones.get_group("holdout").min()
     assert zones.get_group("holdout").max() < excl <= zones.get_group("excluded").min()
+
 
 # --- registry / explore ---------------------------------------------------------
 
