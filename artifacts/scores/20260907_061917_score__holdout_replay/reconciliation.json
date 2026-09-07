@@ -1,0 +1,9 @@
+{
+  "reference": "p_hold_cal.npy",
+  "column": "p_cal",
+  "n_reference": 231,
+  "n_scored": 231,
+  "positional_max_abs_diff": 0.20144358536214316,
+  "sorted_max_abs_diff": 7.048985478652625e-09,
+  "verdict": "pass_values_only"
+}

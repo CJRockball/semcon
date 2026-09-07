@@ -23,6 +23,7 @@ EXPECTED_WAFERS = 1567  # external data contract for the SECOM snapshot
 EXPECTED_CLQ14 = 794
 EXPECTED_CLQ23 = 715
 
+
 class Role(enum.StrEnum):
     KEY = "key"
     METADATA = "metadata"

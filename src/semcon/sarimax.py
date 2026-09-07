@@ -614,4 +614,3 @@ def _in_ipykernel() -> bool:
 # %%
 if __name__ == "__main__" and not _in_ipykernel():
     main([])
-

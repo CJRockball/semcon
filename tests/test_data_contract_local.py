@@ -11,7 +11,7 @@ from semcon.db import feature_columns, get_engine, load_registry
 from semcon.extract import extract
 from semcon.feature_eng import build_features
 
-pytestmark = pytest.mark.local_data   # every test in this file gets the tag
+pytestmark = pytest.mark.local_data  # every test in this file gets the tag
 
 EXPECTED_ZONES = {"cv": 1309, "holdout": 231, "excluded": 27}
 EXPECTED_FAILS = {"cv": 90, "holdout": 14, "excluded": 0}
@@ -21,12 +21,12 @@ EXPECTED_ACTIVE = 261
 
 @pytest.fixture(scope="module")
 def real_engine():
-    return get_engine()   # the real DB, default path
+    return get_engine()  # the real DB, default path
 
 
 @pytest.fixture(scope="module")
 def real_frame(real_engine):
-    return extract(real_engine)   # default CUTOFF/EXCLUDE_AFTER from config
+    return extract(real_engine)  # default CUTOFF/EXCLUDE_AFTER from config
 
 
 @pytest.fixture(scope="module")
@@ -52,7 +52,9 @@ def test_split_zone_counts(real_frame):
 
 
 def test_split_zone_fails(real_frame):
-    fails = real_frame.groupby("split")[schema.TARGET_COL].apply(lambda s: int(s.eq(1).sum())).to_dict()
+    fails = (
+        real_frame.groupby("split")[schema.TARGET_COL].apply(lambda s: int(s.eq(1).sum())).to_dict()
+    )
     assert fails == EXPECTED_FAILS, fails
     assert sum(fails.values()) == 104
 

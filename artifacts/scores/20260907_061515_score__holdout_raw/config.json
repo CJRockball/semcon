@@ -1,0 +1,14 @@
+{
+  "run_id": "20260907_061515_score__holdout_raw",
+  "timestamp": "20260907_061515",
+  "git_sha": "84532c8",
+  "config": {
+    "script": "score",
+    "label": "holdout_raw",
+    "start": "2008-10-05 05:30:59",
+    "end": "2008-10-15 19:24:01",
+    "train_run": "20260907_124328_xgb_sel",
+    "cal_run": null,
+    "n_scored": 231
+  }
+}

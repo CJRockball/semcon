@@ -1,0 +1,14 @@
+{
+  "run_id": "20260907_030156_score__batch_c_dropout",
+  "timestamp": "20260907_030156",
+  "git_sha": "84532c8",
+  "config": {
+    "script": "score",
+    "label": "batch_c_dropout",
+    "start": "2026-01-19 00:00",
+    "end": "2026-01-23 03:00",
+    "train_run": "20260903_150907_xgb_sel",
+    "cal_run": "20260903_150956_cal-platt__xgb_sel",
+    "n_scored": 99
+  }
+}
