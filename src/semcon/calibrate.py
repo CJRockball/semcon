@@ -85,35 +85,46 @@ def find_run(run_id: str | None) -> Path:
     return candidates[-1]
 
 
-def load_labels_from_run(run_dir: Path) -> tuple[pd.Series, dict]:
-    """Full label vector in split-index order, plus the run's splits.json.
-
-    splits.json records WHICH positions (timestamp-sorted frame); the DB
-    records WHAT the labels are. Caller slices cv/holdout via .iloc.
-    """
+def load_labels_from_run(run_dir: Path) -> tuple[pd.DataFrame, dict]:
+    """(wafer_id, is_fail) in canonical order, plus the run's splits.json."""
     splits_path = run_dir / "splits.json"
     assert splits_path.exists(), f"no splits.json in {run_dir} — rerun train_xgb"
     splits = json.loads(splits_path.read_text())
 
     engine = get_engine()
     df = extract(engine).sort_values([schema.TIME_COL, schema.KEY_COL]).reset_index(drop=True)
-
     df = ensure_is_fail(df, engine)
-    y = df["is_fail"]
-
-    return y.reset_index(drop=True), splits
+    return df[[schema.KEY_COL, "is_fail"]], splits
 
 
 def load_parent(run: Path):
-    """OOF scores + holdout scores + labels, reconstructed via splits.json."""
+    """OOF scores + holdout scores + labels, id-aligned.
+
+    The parent's p_hold.parquet is the source of truth for id<->score
+    pairing (pairing by construction). Legacy runs fall back to bare .npy
+    + positional splits.json — tie-hazard on duplicated timestamps.
+    """
     oof = np.load(run / "oof_xgb1.npy")  # (repeats, n_cv)
-    p_hold = np.load(run / "p_hold.npy")
-    y, splits = load_labels_from_run(run)
+    lab, splits = load_labels_from_run(run)
 
-    y_cv = y.iloc[np.asarray(splits["train_index"])]
-    y_hold = y.iloc[np.asarray(splits["holdout_index"])]
-
+    cv = lab.iloc[np.asarray(splits["train_index"])]
+    y_cv, ids_cv = cv["is_fail"], cv[schema.KEY_COL]
     assert len(y_cv) == oof.shape[-1], f"label/OOF mismatch: {len(y_cv)} vs {oof.shape[-1]}"
+
+    keyed = run / "p_hold.parquet"
+    if keyed.exists():
+        ref = pd.read_parquet(keyed)  # wafer_id, timestamp, p_hold
+        p_hold = ref["p_hold"].to_numpy()
+        ids_hold = ref[schema.KEY_COL]
+        y_hold = ref[[schema.KEY_COL]].merge(lab, on=schema.KEY_COL, how="left")["is_fail"]
+        assert y_hold.notna().all(), "holdout ids missing from labels"
+        legacy = np.load(run / "p_hold.npy")
+        assert np.allclose(legacy, p_hold), "p_hold.parquet disagrees with p_hold.npy"
+    else:
+        hold = lab.iloc[np.asarray(splits["holdout_index"])]
+        y_hold, ids_hold = hold["is_fail"], hold[schema.KEY_COL]
+        p_hold = np.load(run / "p_hold.npy")
+
     assert len(y_hold) == len(p_hold), (
         f"holdout label/pred mismatch: {len(y_hold)} vs {len(p_hold)}"
     )
@@ -122,7 +133,7 @@ def load_parent(run: Path):
     if expected is not None:
         assert int(y_cv.sum()) == expected, f"CV fails {int(y_cv.sum())} != recorded {expected}"
 
-    return oof.mean(axis=0), y_cv, p_hold, y_hold
+    return oof.mean(axis=0), y_cv, p_hold, y_hold, ids_cv, ids_hold
 
 
 # ---------------------------------------------------------------- calibration
@@ -166,7 +177,7 @@ def main(argv=None):
     setup_logging(logfile=LOGS / "ml.log")
 
     parent = find_run(args.run_id)
-    oof_mean, y_cv, p_hold_raw, y_hold = load_parent(parent)
+    oof_mean, y_cv, p_hold_raw, y_hold, ids_cv, ids_hold = load_parent(parent)
     logger.info(f"[calibrate] parent={parent.name} method={args.method}")
 
     cal = fit_calibrator(args.method, oof_mean, y_cv)
@@ -198,6 +209,12 @@ def main(argv=None):
     joblib.dump(cal, run_dir / f"calibrator_{args.method}.joblib")
     np.save(run_dir / "oof_cal.npy", oof_cal)
     np.save(run_dir / "p_hold_cal.npy", p_hold_cal)
+    pd.DataFrame({schema.KEY_COL: ids_cv.to_numpy(), "p_oof_cal": oof_cal}).to_parquet(
+        run_dir / "oof_cal.parquet", index=False
+    )
+    pd.DataFrame({schema.KEY_COL: ids_hold.to_numpy(), "p_hold_cal": p_hold_cal}).to_parquet(
+        run_dir / "p_hold_cal.parquet", index=False
+    )
     pd.DataFrame([metrics]).to_csv(run_dir / "calibration_metrics.csv", index=False)
     save_reliability(y_cv, oof_mean, oof_cal, run_dir / "reliability_oof.png", "OOF")
     save_reliability(y_hold, p_hold_raw, p_hold_cal, run_dir / "reliability_holdout.png", "holdout")

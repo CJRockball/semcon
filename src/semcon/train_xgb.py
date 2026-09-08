@@ -112,7 +112,7 @@ def load_data(engine, test_split: int, time_split: int):
     if bad:
         raise ValueError(f"registry-active list contains non-features: {sorted(bad)}")
 
-    df = df.sort_values(schema.TIME_COL).reset_index(drop=True)
+    df = df.sort_values([schema.TIME_COL, schema.KEY_COL]).reset_index(drop=True)
     df_train = df.iloc[:-time_split, :]  # drop regime tail (EDA finding)
     df_test = df_train.iloc[-test_split:, :]  # last holdout_n rows
     df_train = df_train.iloc[:-test_split, :]
@@ -236,6 +236,15 @@ def refit_final(
     final.get_booster().save_model(str(out / "model.ubj"))
     p_hold = final.predict_proba(X_hold[feats])[:, 1]
     np.save(out / "p_hold.npy", p_hold)
+    # id-keyed twin — canonical for serving reconciliation (.npy kept for legacy consumers)
+    pd.DataFrame(
+        {
+            schema.KEY_COL: df_test[schema.KEY_COL].to_numpy(),
+            schema.TIME_COL: df_test[schema.TIME_COL].to_numpy(),
+            "p_hold": p_hold,
+        }
+    ).to_parquet(out / "p_hold.parquet", index=False)
+
     logger.info(
         f"HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  "
         f"rocauc={roc_auc_score(y_hold, p_hold):.4f}  "
@@ -243,6 +252,14 @@ def refit_final(
     )
 
     np.save(out / "oof_xgb1.npy", oof)
+    # id-keyed OOF, long format: one row per (repeat, wafer)
+    pd.DataFrame(
+        {
+            "repeat": np.repeat(np.arange(repeats), len(df_train)),
+            schema.KEY_COL: np.tile(df_train[schema.KEY_COL].to_numpy(), repeats),
+            "p_oof": oof.reshape(-1),
+        }
+    ).to_parquet(out / "oof_xgb1.parquet", index=False)
     res.to_csv(out / "cv_metrics_xgb1.csv")
     return final, feats, p_hold, stability
 

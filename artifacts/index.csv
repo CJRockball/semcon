@@ -1,9 +1,7 @@
 run_id,run_name,note,git_sha,data,snapshot_id,cv_aucpr_mean,cv_aucpr_std,threshold,holdout_aucpr,holdout_rocauc,holdout_brier,holdout_recall,holdout_precision,flagrate_recall,type,parent_run,method,brier_oof_raw,brier_oof_cal,brier_holdout_raw,brier_holdout_cal
-20260907_124328_xgb_sel,xgb_sel,,84532c8,20f0e7ee434f7dcb,20260907_044406_118aeaa4,0.2223096013511817,0.0605738561203313,0.5551995635032654,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.2142857142857142,,,,,,,
-20260907_124417_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260907_124328_xgb_sel,platt,0.1222,0.0611,0.0605,0.0574
-20260907_044603_score__batch_a_clean,,window 2026-01-05 00:00..2026-01-09 03:01; cal=20260907_124417_cal-platt__xgb_sel; n=100,84532c8,,,,,,,,,,,,score,20260907_124328_xgb_sel,,,,,
-20260907_044619_score__batch_b_shift,,window 2026-01-12 00:00..2026-01-16 03:01; cal=20260907_124417_cal-platt__xgb_sel; n=100,84532c8,,,,,,,,,,,,score,20260907_124328_xgb_sel,,,,,
-20260907_044637_score__batch_c_dropout,,window 2026-01-19 00:00..2026-01-23 03:01; cal=20260907_124417_cal-platt__xgb_sel; n=100,84532c8,,,,,,,,,,,,score,20260907_124328_xgb_sel,,,,,
-20260907_044650_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260907_124417_cal-platt__xgb_sel; n=231,84532c8,,,,,,,,,,,,score,20260907_124328_xgb_sel,,,,,
-20260907_061515_score__holdout_raw,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=none; n=231,84532c8,,,,,,,,,,,,score,20260907_124328_xgb_sel,,,,,
-20260907_061917_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260907_124417_cal-platt__xgb_sel; n=231,84532c8,,,,,,,,,,,,score,20260907_124328_xgb_sel,,,,,
+20260908_103616_xgb_sel,xgb_sel,,72a08e7,20f0e7ee434f7dcb,20260908_023654_c9104287,0.2251943557751336,0.0623650034814821,0.5807785391807556,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.1428571428571428,,,,,,,
+20260908_103706_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260908_103616_xgb_sel,platt,0.1193,0.0609,0.0605,0.0574
+20260908_103712_score__batch_a_clean,,window 2026-01-05 00:00..2026-01-09 03:01; cal=20260908_103706_cal-platt__xgb_sel; n=100,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
+20260908_103714_score__batch_b_shift,,window 2026-01-12 00:00..2026-01-16 03:01; cal=20260908_103706_cal-platt__xgb_sel; n=100,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
+20260908_103717_score__batch_c_dropout,,window 2026-01-19 00:00..2026-01-23 03:01; cal=20260908_103706_cal-platt__xgb_sel; n=100,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
+20260908_103719_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260908_103706_cal-platt__xgb_sel; n=231,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,

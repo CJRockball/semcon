@@ -27,7 +27,7 @@ import argparse
 import hashlib
 import logging
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -90,7 +90,7 @@ def append_lots(
         payload, index=False
     )
     digest = hashlib.sha256(payload.read_bytes()).hexdigest()
-    now = datetime.now(UTC)
+    now = datetime.now()
     log = pd.DataFrame(
         [
             {

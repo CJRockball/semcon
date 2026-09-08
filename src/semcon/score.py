@@ -16,7 +16,7 @@ import csv
 import json
 import logging
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -140,6 +140,11 @@ def reconcile(out: pd.DataFrame, train_dir: Path, cal_dir: Path | None, tol: flo
     wafer_id, so on positional mismatch we fall back to a sorted value-set
     comparison and say so plainly in the report.
     """
+    if cal_dir is not None and (cal_dir / "p_hold_cal.parquet").exists():
+        return _reconcile_keyed(out, cal_dir / "p_hold_cal.parquet", "p_hold_cal", "p_cal", tol)
+    if (train_dir / "p_hold.parquet").exists():
+        return _reconcile_keyed(out, train_dir / "p_hold.parquet", "p_hold", "score_raw", tol)
+
     if cal_dir is not None and (cal_dir / "p_hold_cal.npy").exists():
         ref_path, col = cal_dir / "p_hold_cal.npy", "p_cal"
     else:
@@ -179,6 +184,28 @@ def reconcile(out: pd.DataFrame, train_dir: Path, cal_dir: Path | None, tol: flo
             srt,
             ref_path.name,
         )
+    return report
+
+
+def _reconcile_keyed(out, ref_path: Path, ref_col: str, got_col: str, tol: float) -> dict:
+    ref = pd.read_parquet(ref_path)
+    merged = out[[schema.KEY_COL, got_col]].merge(ref, on=schema.KEY_COL)
+    report = {
+        "reference": ref_path.name,
+        "mode": "keyed",
+        "n_reference": int(len(ref)),
+        "n_scored": int(len(out)),
+    }
+    if len(merged) != len(ref):
+        report["verdict"] = "fail_key_coverage"
+        logger.warning("reconcile: keyed join matched %d/%d reference rows", len(merged), len(ref))
+        return report
+    diff = float(np.max(np.abs(merged[got_col].to_numpy() - merged[ref_col].to_numpy())))
+    report["max_abs_diff"] = diff
+    report["verdict"] = "pass" if diff < tol else "fail_values"
+    (logger.info if diff < tol else logger.warning)(
+        "reconcile (keyed): max |diff| = %.3e vs %s", diff, ref_path.name
+    )
     return report
 
 
@@ -223,7 +250,7 @@ def main() -> None:
     out = score_frame(frame, booster, features, calibrator)
     logger.info("[score] scored n=%d", len(out))
 
-    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_id = f"{ts}_score__{args.label}"
     out_dir = SCORES / run_id
     out_dir.mkdir(parents=True, exist_ok=False)

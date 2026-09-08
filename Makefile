@@ -2,6 +2,8 @@
 #
 #   make            full pipeline: ingest -> extract -> explore -> features
 #                   -> train (base + sel) -> calibrate -> spc -> sarimax
+# make demo serving demo: 
+#					simulate 3 lots -> score -> reconciled holdout replay
 #   make train      both training runs only
 #   make <stage>    single stage: ingest, extract, explore, features,
 #                   train-base, train-sel, calibrate, spc, sarimax
@@ -10,6 +12,7 @@
 #
 # Console scripts come from pyproject.toml; the two data-layer stages use
 # python -m until semcon-ingest / semcon-extract entry points land (Phase 5).
+
 # If a script name differs on your machine, fix it once in this block:
 
 UV       := uv run
@@ -22,6 +25,8 @@ TRAIN    := $(UV) semcon-train_xgb
 CALIB    := $(UV) semcon-calibrate
 SPC      := $(UV) semcon-spc
 SARIMAX  := $(UV) semcon-sarimax
+SIMULATE := $(UV) semcon-simulate
+SCORE    := $(UV) semcon-score
 
 # Run-name slugs, matching the post-migration defaults in train_xgb.
 # Selection strength (gamma) comes from semcon config, not the CLI - if
@@ -30,7 +35,7 @@ BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
 .PHONY: all ingest extract explore features train train-base train-sel \
-        calibrate spc sarimax test hygiene clean
+        calibrate spc sarimax test hygiene clean demo
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -80,6 +85,17 @@ sarimax: extract
 	@echo "==> sarimax experiments"
 	$(SARIMAX)
 
+# Batch windows mirror simulate_lots.py defaults (seed 7, start 2026-01-05);
+# the holdout window mirrors the SECOM snapshot zone boundaries. Change together.
+demo: calibrate
+	@echo "==> simulate 3 incoming lots (append-only, PK-guarded)"
+	$(SIMULATE)
+	@echo "==> score batches + reconciled holdout replay"
+	$(SCORE) --start "2026-01-05 00:00" --end "2026-01-09 03:01" --label batch_a_clean
+	$(SCORE) --start "2026-01-12 00:00" --end "2026-01-16 03:01" --label batch_b_shift
+	$(SCORE) --start "2026-01-19 00:00" --end "2026-01-23 03:01" --label batch_c_dropout
+	$(SCORE) --start "2008-10-05 05:30:59" --end "2008-10-15 19:24:01" --label holdout_replay --reconcile
+
 test:
 	$(UV) pytest -q
 
@@ -100,6 +116,8 @@ clean:
 	rm -f artifacts/index.csv artifacts/index_monitor.csv artifacts/diagnostic.parquet
 	rm -rf artifacts/eda_*
 	rm -f logs/*
+	rm -rf artifacts/scores
+	rm -rf data/sim
 	find src tests -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type f -name "*.py[co]" -delete
 	@mkdir -p data/snapshots artifacts/runs logs
