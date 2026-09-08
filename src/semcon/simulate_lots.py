@@ -90,7 +90,7 @@ def append_lots(
         payload, index=False
     )
     digest = hashlib.sha256(payload.read_bytes()).hexdigest()
-    now = datetime.now(UTC)
+    now = datetime.now()
     log = pd.DataFrame(
         [
             {

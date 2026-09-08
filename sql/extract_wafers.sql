@@ -16,4 +16,4 @@ SELECT r.*, l.target, l.timestamp,
 FROM sensor_readings r
 JOIN wafer_labels l USING (wafer_id)
 WHERE l.timestamp BETWEEN :start AND :end
-ORDER BY l.timestamp;
+ORDER BY l.timestamp, r.wafer_id;
