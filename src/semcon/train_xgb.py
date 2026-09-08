@@ -236,7 +236,7 @@ def refit_final(
     final.get_booster().save_model(str(out / "model.ubj"))
     p_hold = final.predict_proba(X_hold[feats])[:, 1]
     np.save(out / "p_hold.npy", p_hold)
-     # id-keyed twin — canonical for serving reconciliation (.npy kept for legacy consumers)
+    # id-keyed twin — canonical for serving reconciliation (.npy kept for legacy consumers)
     pd.DataFrame(
         {
             schema.KEY_COL: df_test[schema.KEY_COL].to_numpy(),
@@ -244,7 +244,7 @@ def refit_final(
             "p_hold": p_hold,
         }
     ).to_parquet(out / "p_hold.parquet", index=False)
-    
+
     logger.info(
         f"HOLDOUT  aucpr={average_precision_score(y_hold, p_hold):.4f}  "
         f"rocauc={roc_auc_score(y_hold, p_hold):.4f}  "
@@ -252,7 +252,7 @@ def refit_final(
     )
 
     np.save(out / "oof_xgb1.npy", oof)
-        # id-keyed OOF, long format: one row per (repeat, wafer)
+    # id-keyed OOF, long format: one row per (repeat, wafer)
     pd.DataFrame(
         {
             "repeat": np.repeat(np.arange(repeats), len(df_train)),

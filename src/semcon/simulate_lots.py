@@ -27,7 +27,7 @@ import argparse
 import hashlib
 import logging
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime
 
 import numpy as np
 import pandas as pd

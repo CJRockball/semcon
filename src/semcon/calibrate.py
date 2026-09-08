@@ -125,13 +125,16 @@ def load_parent(run: Path):
         y_hold, ids_hold = hold["is_fail"], hold[schema.KEY_COL]
         p_hold = np.load(run / "p_hold.npy")
 
-    assert len(y_hold) == len(p_hold), f"holdout label/pred mismatch: {len(y_hold)} vs {len(p_hold)}"
+    assert len(y_hold) == len(p_hold), (
+        f"holdout label/pred mismatch: {len(y_hold)} vs {len(p_hold)}"
+    )
 
     expected = splits.get("n_train_fails")  # present on new runs only
     if expected is not None:
         assert int(y_cv.sum()) == expected, f"CV fails {int(y_cv.sum())} != recorded {expected}"
 
     return oof.mean(axis=0), y_cv, p_hold, y_hold, ids_cv, ids_hold
+
 
 # ---------------------------------------------------------------- calibration
 

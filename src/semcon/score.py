@@ -16,7 +16,7 @@ import csv
 import json
 import logging
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -144,7 +144,7 @@ def reconcile(out: pd.DataFrame, train_dir: Path, cal_dir: Path | None, tol: flo
         return _reconcile_keyed(out, cal_dir / "p_hold_cal.parquet", "p_hold_cal", "p_cal", tol)
     if (train_dir / "p_hold.parquet").exists():
         return _reconcile_keyed(out, train_dir / "p_hold.parquet", "p_hold", "score_raw", tol)
-    
+
     if cal_dir is not None and (cal_dir / "p_hold_cal.npy").exists():
         ref_path, col = cal_dir / "p_hold_cal.npy", "p_cal"
     else:
@@ -207,6 +207,7 @@ def _reconcile_keyed(out, ref_path: Path, ref_col: str, got_col: str, tol: float
         "reconcile (keyed): max |diff| = %.3e vs %s", diff, ref_path.name
     )
     return report
+
 
 def append_index(row: dict) -> None:
     """One registry row per scoring batch — no run counts unless it's in the index."""
