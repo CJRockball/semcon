@@ -27,6 +27,7 @@ SPC      := $(UV) semcon-spc
 SARIMAX  := $(UV) semcon-sarimax
 SIMULATE := $(UV) semcon-simulate
 SCORE    := $(UV) semcon-score
+SCORECARD := $(UV) semcon-scorecard
 
 # Run-name slugs, matching the post-migration defaults in train_xgb.
 # Selection strength (gamma) comes from semcon config, not the CLI - if
@@ -95,6 +96,11 @@ demo: calibrate
 	$(SCORE) --start "2026-01-12 00:00" --end "2026-01-16 03:01" --label batch_b_shift
 	$(SCORE) --start "2026-01-19 00:00" --end "2026-01-23 03:01" --label batch_c_dropout
 	$(SCORE) --start "2008-10-05 05:30:59" --end "2008-10-15 19:24:01" --label holdout_replay --reconcile
+	@echo "==> scorecards (evaluation panels, registered)"
+	$(SCORECARD) --score-run latest --label batch_a_clean
+	$(SCORECARD) --score-run latest --label batch_b_shift --reference-label batch_a_clean
+	$(SCORECARD) --score-run latest --label batch_c_dropout --reference-label batch_a_clean
+	$(SCORECARD) --score-run latest --label holdout_replay
 
 test:
 	$(UV) pytest -q

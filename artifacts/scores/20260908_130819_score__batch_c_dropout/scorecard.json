@@ -1,0 +1,23 @@
+{
+  "n_scored": 100,
+  "p_median": 0.024274407260256377,
+  "p_mean": 0.052418769419978535,
+  "p90": 0.07695108914687433,
+  "clq14_top_decile_share": 0.5,
+  "clq14_batch_share": 0.72,
+  "clq14_enrichment": 0.6944444444444444,
+  "n_fails": 9,
+  "base_rate": 0.09,
+  "top_decile_fails": 8,
+  "top_decile_capture": 0.8888888888888888,
+  "top_decile_lift": 8.88888888888889,
+  "recall_at_flag_0.05": 0.5555555555555556,
+  "recall_at_flag_0.10": 0.8888888888888888,
+  "score_run": "20260908_130819_score__batch_c_dropout",
+  "label": "batch_c_dropout",
+  "reference": "20260908_130814_score__batch_a_clean",
+  "p_median_delta_vs_ref": 0.00014613504563932428,
+  "p_mean_delta_vs_ref": 0.012465222644532169,
+  "p90_delta_vs_ref": 0.04638607843919512,
+  "top_decile_capture_delta_vs_ref": 0.13888888888888884
+}
