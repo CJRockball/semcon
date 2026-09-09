@@ -24,3 +24,4 @@ run_id,run_name,note,git_sha,data,snapshot_id,cv_aucpr_mean,cv_aucpr_std,thresho
 20260909_094353_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
 20260909_094519_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
 20260909_094741_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
+20260909_102104_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
