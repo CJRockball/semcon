@@ -468,7 +468,7 @@ def main(argv=None):
     logger.info("[doe_analyze] recommendation=%s", recommendation)
     logger.info("[doe_analyze] done -> %s", output_dir)
 
-    return recommendation
+    return
 
 
 if __name__ == "__main__":

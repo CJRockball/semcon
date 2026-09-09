@@ -28,6 +28,19 @@ SARIMAX  := $(UV) semcon-sarimax
 SIMULATE := $(UV) semcon-simulate
 SCORE    := $(UV) semcon-score
 SCORECARD := $(UV) semcon-scorecard
+DOE_DESIGN := $(UV) semcon-doe-design
+DOE_RUN := $(UV) semcon-doe-run
+DOE_ANALYZE := $(UV) semcon-doe-analyze
+
+# DOE demonstration configuration.
+# The modules create timestamped run folders and update these one-line pointer
+# files only after each stage has completed successfully.
+DOE_ROOT := artifacts/doe
+DOE_LABEL := s060-factorial
+DOE_DESIGN_LATEST := $(DOE_ROOT)/latest_design
+DOE_RUN_LATEST := $(DOE_ROOT)/latest_run
+DOE_BACKGROUND_START := 2008-07-19 00:00:00
+DOE_BACKGROUND_END := 2008-10-05 05:29:59
 
 # Run-name slugs, matching the post-migration defaults in train_xgb.
 # Selection strength (gamma) comes from semcon config, not the CLI - if
@@ -35,8 +48,9 @@ SCORECARD := $(UV) semcon-scorecard
 BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
-.PHONY: all ingest extract explore features train train-base train-sel \
-        calibrate spc sarimax test hygiene clean demo
+.PHONY: all ingest extract validate explore features train train-base train-sel \
+        calibrate spc sarimax test hygiene clean demo \
+        doe-design doe-run doe-analyze doe
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -102,6 +116,35 @@ demo: calibrate
 	$(SCORECARD) --score-run latest --label batch_c_dropout --reference-label batch_a_clean
 	$(SCORECARD) --score-run latest --label holdout_replay
 
+doe-design: calibrate
+	@echo "==> DOE design: selected raw sensors -> pyDOE3 factorial matrix"
+	$(DOE_DESIGN) \
+		--run latest \
+		--label $(DOE_LABEL) \
+		--n-factors 3
+	@test -s $(DOE_DESIGN_LATEST) || { echo "FAIL: DOE design did not write $(DOE_DESIGN_LATEST)"; exit 1; }
+	@echo "==> DOE design pointer: $$(cat $(DOE_DESIGN_LATEST))"
+
+doe-run: doe-design
+	@echo "==> DOE run: calibrated surrogate + background averaging + OOD"
+	$(DOE_RUN) \
+		--design "$$(cat $(DOE_DESIGN_LATEST))/design.csv" \
+		--background-start "$(DOE_BACKGROUND_START)" \
+		--background-end "$(DOE_BACKGROUND_END)" \
+		--label $(DOE_LABEL)
+	@test -s $(DOE_RUN_LATEST) || { echo "FAIL: DOE run did not write $(DOE_RUN_LATEST)"; exit 1; }
+	@echo "==> DOE run pointer: $$(cat $(DOE_RUN_LATEST))"
+
+doe-analyze: doe-run
+	@echo "==> DOE analysis: effects, interactions, diagnostics, recommendation"
+	$(DOE_ANALYZE) \
+		--predictions "$$(cat $(DOE_RUN_LATEST))/design_predictions.parquet" \
+		--output-dir "$$(cat $(DOE_RUN_LATEST))/analysis"
+	@echo "==> DOE analysis complete: $$(cat $(DOE_RUN_LATEST))/analysis"
+
+doe: doe-analyze
+	@echo "==> DOE pipeline complete"
+
 test:
 	$(UV) pytest -q
 
@@ -124,6 +167,7 @@ clean:
 	rm -f logs/*
 	rm -rf artifacts/scores
 	rm -rf data/sim
+	rm -rf artifacts/doe
 	find src tests -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type f -name "*.py[co]" -delete
 	@mkdir -p data/snapshots artifacts/runs logs

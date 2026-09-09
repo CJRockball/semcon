@@ -1,0 +1,30 @@
+{
+  "run_id": "20260909_135346_doe-design_s060-factorial",
+  "timestamp": "20260909_135346",
+  "git_sha": "0221902",
+  "python": "3.11.14",
+  "packages": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "xgboost": "2.1.1"
+  },
+  "note": "",
+  "config": {
+    "script": "doe_design",
+    "label": "s060-factorial",
+    "parent_run": "20260909_135246_xgb_sel",
+    "n_factors": 3,
+    "preferred": [
+      "s060"
+    ],
+    "fraction": null,
+    "center_points": 0,
+    "replicates": 1,
+    "randomize": true,
+    "seed": 1337,
+    "factor_level_policy": "observed Q10/Q50/Q90 from extracted SECOM frame",
+    "factor_policy": "Raw continuous sensors only; engineered missingness and clique features excluded because they are not controllable physical knobs.",
+    "claim_boundary": "Surrogate DOE design only. Factor levels are observed sensor quantiles, not recipe settings; causal confirmation requires controlled physical lots."
+  }
+}

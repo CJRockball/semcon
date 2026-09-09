@@ -1,0 +1,40 @@
+{
+  "seed": 1337,
+  "center_points": 0,
+  "replicates": 1,
+  "randomize": true,
+  "fraction": null,
+  "run_prefix": "doe",
+  "factors": [
+    {
+      "name": "s060",
+      "low": -4.4326300000000005,
+      "center": 0.9472499999999999,
+      "high": 15.870080000000014,
+      "units": "SECOM sensor units; physical units unavailable",
+      "rationale": "Selected raw sensor feature. mean_abs_shap=0.803315; levels are observed Q10/Q50/Q90."
+    },
+    {
+      "name": "s022",
+      "low": -6413.4,
+      "center": -5523.25,
+      "high": -5196.15,
+      "units": "SECOM sensor units; physical units unavailable",
+      "rationale": "Selected raw sensor feature. mean_abs_shap=0.43461; levels are observed Q10/Q50/Q90."
+    },
+    {
+      "name": "s461",
+      "low": 15.48685,
+      "center": 26.16785,
+      "high": 46.29105,
+      "units": "SECOM sensor units; physical units unavailable",
+      "rationale": "Selected raw sensor feature. mean_abs_shap=0.393434; levels are observed Q10/Q50/Q90."
+    }
+  ],
+  "design_run_id": "20260909_135346_doe-design_s060-factorial",
+  "parent_run": "20260909_135246_xgb_sel",
+  "note": "",
+  "factor_level_policy": "observed Q10/Q50/Q90 from extracted SECOM frame",
+  "factor_policy": "Raw continuous sensors only; engineered missingness and clique features excluded because they are not controllable physical knobs.",
+  "claim_boundary": "Surrogate DOE design only. Factor levels are observed sensor quantiles, not recipe settings; causal confirmation requires controlled physical lots."
+}

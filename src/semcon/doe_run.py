@@ -17,6 +17,7 @@ from semcon.calibrate import predict_calibrated
 from semcon.config import load_config
 from semcon.db import get_engine
 from semcon.extract import extract
+from semcon.feature_eng import build_features
 from semcon.paths import ARTIFACTS, LOGS
 from semcon.score import apply_calibrator, check_contract, load_contract, resolve_runs
 from semcon.utils import setup_logging
@@ -87,9 +88,19 @@ def _build_design_matrix(
 
 
 def _predict_raw_scores(
-    frame: pd.DataFrame, features: list[str], booster: xgb.Booster
+    frame: pd.DataFrame,
+    features: list[str],
+    booster: xgb.Booster,
 ) -> np.ndarray:
-    X = check_contract(frame, features)
+    """Rebuild engineered features, enforce contract, and score the booster.
+
+    DOE factors are applied to raw sensor columns first. build_features() then
+    recreates the engineered missingness/data-quality columns exactly as the
+    training and batch-scoring paths do. Registry rows are deliberately
+    discarded: a DOE run must not mutate the production column registry.
+    """
+    engineered, _ = build_features(frame)
+    X = check_contract(engineered, features)
     dm = xgb.DMatrix(X.to_numpy(), feature_names=features)
     return booster.predict(dm)
 
@@ -172,29 +183,91 @@ def score_design_ood(
     design: pd.DataFrame,
     background: pd.DataFrame,
     factors: list[str],
+    *,
+    min_complete_rows: int = 20,
 ) -> pd.DataFrame:
-    """Compute simple OOD diagnostics for each design point."""
+    """Compute OOD diagnostics for each DOE point.
+
+    Mahalanobis and kNN distances are calculated only on background wafers
+    complete across the selected DOE factors. Missing sensor readings are not
+    imputed for geometric OOD distances because zero/imputed values would
+    distort the observed-factor covariance structure.
+
+    The result records the support population used for every design point.
+    """
     if design.empty:
         raise ValueError("design is empty")
     if background.empty:
         raise ValueError("background is empty")
 
-    ref = background[factors].to_numpy(dtype=float)
-    pts = design[factors].to_numpy(dtype=float)
+    missing_design = [factor for factor in factors if factor not in design.columns]
+    if missing_design:
+        raise ValueError(f"design missing OOD factor columns: {missing_design}")
 
-    center = np.nanmean(ref, axis=0)
+    missing_background = [factor for factor in factors if factor not in background.columns]
+    if missing_background:
+        raise ValueError(f"background missing OOD factor columns: {missing_background}")
+
+    raw_ref = (
+        background[factors].apply(pd.to_numeric, errors="coerce").replace([np.inf, -np.inf], np.nan)
+    )
+    complete_mask = raw_ref.notna().all(axis=1)
+    ref = raw_ref.loc[complete_mask].to_numpy(dtype=float)
+
+    n_background = len(background)
+    n_complete = len(ref)
+    n_dropped = n_background - n_complete
+
+    if n_complete < min_complete_rows:
+        raise ValueError(
+            "Insufficient complete background support for OOD calculation: "
+            f"{n_complete}/{n_background} rows complete across {factors}; "
+            f"need at least {min_complete_rows}."
+        )
+
+    pts_frame = (
+        design[factors].apply(pd.to_numeric, errors="coerce").replace([np.inf, -np.inf], np.nan)
+    )
+    if pts_frame.isna().any().any():
+        bad = pts_frame.columns[pts_frame.isna().any()].tolist()
+        raise ValueError(f"design contains non-finite factor values: {bad}")
+
+    pts = pts_frame.to_numpy(dtype=float)
+
+    center = ref.mean(axis=0)
     cov = np.cov(ref, rowvar=False)
-    cov_inv = np.linalg.pinv(cov)
 
+    if not np.isfinite(cov).all():
+        raise ValueError("OOD covariance contains non-finite values after complete-case filtering")
+
+    cov_inv = np.linalg.pinv(cov)
     mah = _mahalanobis_distance(pts, center, cov_inv)
     knn = _knn_distance(pts, ref, k=5)
+
+    # Compare DOE points against the observed support distribution, not against
+    # the DOE points themselves. This avoids the old 95th-percentile-of-design
+    # bug, where at least one generated point is always labelled OOD.
+    ref_mah = _mahalanobis_distance(ref, center, cov_inv)
+    ref_knn = _knn_distance(ref, ref, k=6)
+
+    mah_threshold = float(np.quantile(ref_mah, 0.99))
+    knn_threshold = float(np.quantile(ref_knn, 0.99))
 
     out = design[["run_id", "run_order"]].copy()
     for factor in factors:
         out[factor] = design[factor].to_numpy()
+
     out["mahalanobis"] = mah
     out["knn_distance"] = knn
-    out["ood_flag"] = (mah > np.nanpercentile(mah, 95)) | (knn > np.nanpercentile(knn, 95))
+    out["mahalanobis_threshold_q99"] = mah_threshold
+    out["knn_threshold_q99"] = knn_threshold
+    out["ood_flag"] = (mah > mah_threshold) | (knn > knn_threshold)
+
+    out["n_background"] = n_background
+    out["n_complete_background"] = n_complete
+    out["n_dropped_missing_background"] = n_dropped
+    out["complete_background_fraction"] = n_complete / n_background
+
     return out
 
 
@@ -292,8 +365,14 @@ def main(argv=None):
     }
     append_doe_index(run_dir, metrics)
 
+    latest_pointer = DOE_ROOT / "latest_run"
+    latest_pointer.parent.mkdir(parents=True, exist_ok=True)
+    latest_pointer.write_text(f"{run_dir}\n", encoding="utf-8")
+
     logger.info("[doe_run] wrote %s", run_dir)
-    return run_dir, predictions_path, ood_path, config_path
+    logger.info("[doe_run] updated latest pointer -> %s", latest_pointer)
+
+    return
 
 
 if __name__ == "__main__":

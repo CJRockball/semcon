@@ -16,7 +16,7 @@ from semcon.config import load_config
 from semcon.db import get_engine
 from semcon.extract import extract
 from semcon.feature_eng import build_features
-from semcon.paths import LOGS
+from semcon.paths import ARTIFACTS, LOGS
 from semcon.score import load_contract, resolve_runs
 from semcon.utils import setup_logging
 
@@ -511,10 +511,15 @@ def main(argv=None):
         },
     )
 
+    latest_pointer = ARTIFACTS / "doe" / "latest_design"
+    latest_pointer.parent.mkdir(parents=True, exist_ok=True)
+    latest_pointer.write_text(f"{run_dir}\n", encoding="utf-8")
+
     logger.info("[doe_design] parent=%s", train_id)
     logger.info("[doe_design] selected factors=%s", [f["name"] for f in factors])
     logger.info("[doe_design] wrote design -> %s", design_csv)
     logger.info("[doe_design] wrote metadata -> %s", design_json)
+    logger.info("[doe_design] updated latest pointer -> %s", latest_pointer)
     logger.info(
         "[doe_design] next:\n"
         "semcon-doe-run --design %s "
@@ -524,7 +529,7 @@ def main(argv=None):
         args.label,
     )
 
-    return run_dir
+    return
 
 
 if __name__ == "__main__":

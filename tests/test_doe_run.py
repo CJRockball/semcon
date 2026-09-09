@@ -81,6 +81,22 @@ def test_resolve_surrogate_and_score_design(
         lambda run, no_cal: (train_dir, cal_dir, train_dir.name, cal_dir.name),
     )
 
+    monkeypatch.setattr(
+        "semcon.doe_run.build_features",
+        lambda frame: (frame, []),
+    )
+
+    surrogate = resolve_surrogate(run="latest", no_cal=False)
+
+    out = score_design(
+        background,
+        design,
+        surrogate,
+        noise_mode="bernoulli",
+        gaussian_sigma=None,
+        seed=7,
+    )
+
     surrogate = resolve_surrogate(run="latest", no_cal=False)
 
     out = score_design(
@@ -101,7 +117,12 @@ def test_score_design_ood_flags_expected_structure() -> None:
     background = _tiny_background()
     design = _tiny_design()
 
-    out = score_design_ood(design, background, ["s060", "s123"])
+    out = score_design_ood(
+        design,
+        background,
+        ["s060", "s123"],
+        min_complete_rows=3,
+    )
 
     assert len(out) == 2
     assert {"mahalanobis", "knn_distance", "ood_flag"}.issubset(out.columns)
@@ -144,3 +165,85 @@ def test_load_background_frame_uses_extract_window(monkeypatch: pytest.MonkeyPat
 
     assert not out.empty
     assert called["args"] == ("2026-01-01", "2026-01-02", None, None)
+
+
+def test_score_design_rebuilds_features_before_contract_check(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    background = _tiny_background()
+    design = _tiny_design()
+    calls = {"n": 0}
+
+    class DummyBooster:
+        def predict(self, matrix):
+            return np.full(matrix.num_row(), 0.2)
+
+    def fake_build_features(frame: pd.DataFrame):
+        calls["n"] += 1
+        out = frame.copy()
+        out["f_miss_clq14"] = 0
+        out["f_miss_clq23"] = 0
+        return out, []
+
+    monkeypatch.setattr("semcon.doe_run.build_features", fake_build_features)
+
+    surrogate = (
+        Path("train"),
+        None,
+        "train",
+        None,
+        ["s060", "s123", "f_miss_clq14", "f_miss_clq23"],
+        DummyBooster(),
+        None,
+        None,
+    )
+
+    out = score_design(
+        background,
+        design,
+        surrogate,
+        noise_mode="bernoulli",
+        gaussian_sigma=None,
+        seed=7,
+    )
+
+    assert calls["n"] == 1
+    assert len(out) == len(background) * len(design)
+    assert out["score_raw"].eq(0.2).all()
+
+
+def test_score_design_ood_drops_missing_background_rows() -> None:
+    background = _tiny_background()
+    background.loc[0, "s060"] = np.nan
+
+    design = _tiny_design()
+
+    out = score_design_ood(
+        design,
+        background,
+        ["s060", "s123"],
+        min_complete_rows=3,
+    )
+
+    assert len(out) == len(design)
+    assert out["n_background"].eq(4).all()
+    assert out["n_complete_background"].eq(3).all()
+    assert out["n_dropped_missing_background"].eq(1).all()
+    assert out["complete_background_fraction"].eq(0.75).all()
+    assert np.isfinite(out["mahalanobis"]).all()
+    assert np.isfinite(out["knn_distance"]).all()
+
+
+def test_score_design_ood_rejects_insufficient_complete_background() -> None:
+    background = _tiny_background()
+    background["s060"] = np.nan
+
+    design = _tiny_design()
+
+    with pytest.raises(ValueError, match="Insufficient complete background support"):
+        score_design_ood(
+            design,
+            background,
+            ["s060", "s123"],
+            min_complete_rows=3,
+        )
