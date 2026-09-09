@@ -80,6 +80,9 @@ semcon-simulate = "semcon.simulate_lots:main"
 semcon-score = "semcon.score:main"
 semcon-scorecard = "semcon.scorecard:main"
 
+semcon-doe-design = "semcon.doe_design:main"
+semcon-doe-run = "semcon.doe_run:main"
+semcon-doe-analyze = "semcon.doe_analyze:main"
 semcon-spc = "semcon.spc:main"
 semcon-sarimax = "semcon.sarimax:main"
 
