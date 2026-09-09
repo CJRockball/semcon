@@ -1,4 +1,5 @@
 """Unit tests for the scorecard panel — synthetic frames, no database."""
+
 from __future__ import annotations
 
 import numpy as np

@@ -86,7 +86,9 @@ def _build_design_matrix(
     return pd.concat(expanded, ignore_index=True)
 
 
-def _predict_raw_scores(frame: pd.DataFrame, features: list[str], booster: xgb.Booster) -> np.ndarray:
+def _predict_raw_scores(
+    frame: pd.DataFrame, features: list[str], booster: xgb.Booster
+) -> np.ndarray:
     X = check_contract(frame, features)
     dm = xgb.DMatrix(X.to_numpy(), feature_names=features)
     return booster.predict(dm)
@@ -112,7 +114,9 @@ def _logit(p: np.ndarray, eps: float = 1e-12) -> np.ndarray:
     return np.log(p / (1.0 - p))
 
 
-def _apply_noise(p: np.ndarray, noise_mode: str, gaussian_sigma: float | None, seed: int) -> np.ndarray:
+def _apply_noise(
+    p: np.ndarray, noise_mode: str, gaussian_sigma: float | None, seed: int
+) -> np.ndarray:
     rng = np.random.default_rng(seed)
 
     if noise_mode == "bernoulli":
@@ -274,7 +278,9 @@ def main(argv=None):
         "n_background_rows": int(len(background)),
     }
 
-    run_dir, predictions_path, ood_path, config_path = write_run_artifacts(predictions, ood, run_config)
+    run_dir, predictions_path, ood_path, config_path = write_run_artifacts(
+        predictions, ood, run_config
+    )
 
     metrics = {
         "type": "doe",

@@ -63,7 +63,7 @@ class DOEConfig(BaseModel):
     randomize: bool = True
     noise_mode: str = "bernoulli"
     gaussian_sigma: float | None = None
-    
+
 
 class Config(BaseModel):
     model_config = ConfigDict(extra="forbid")

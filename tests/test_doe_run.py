@@ -54,7 +54,9 @@ def _tiny_design() -> pd.DataFrame:
     )
 
 
-def test_resolve_surrogate_and_score_design(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_surrogate_and_score_design(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     background = _tiny_background()
     design = _tiny_design()
     features = ["s060", "s123"]
@@ -112,7 +114,9 @@ def test_write_run_artifacts_and_append_index(tmp_path: Path) -> None:
     ood = pd.DataFrame({"run_id": ["doe_001"], "mahalanobis": [1.0], "knn_distance": [0.5]})
     run_config = {"label": "demo", "note": "test"}
 
-    run_dir, predictions_path, ood_path, config_path = write_run_artifacts(predictions, ood, run_config)
+    run_dir, predictions_path, ood_path, config_path = write_run_artifacts(
+        predictions, ood, run_config
+    )
 
     assert run_dir.exists()
     assert predictions_path.exists()
@@ -122,6 +126,7 @@ def test_write_run_artifacts_and_append_index(tmp_path: Path) -> None:
     append_doe_index(run_dir, {"type": "doe", "parent_run": "train", "note": "test"})
 
     from semcon.paths import ARTIFACTS
+
     assert (ARTIFACTS / "index.csv").exists()
 
 

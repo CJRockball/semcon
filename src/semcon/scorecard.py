@@ -12,6 +12,7 @@ definitionally identical.
 
 Entry point: semcon-scorecard = semcon.scorecard:main
 """
+
 from __future__ import annotations
 
 import argparse
@@ -115,7 +116,13 @@ def compute_panel(
             r = recall_at_flagrate(y, p.to_numpy(), q=q)
             panel[f"recall_at_flag_{q:.2f}"] = float(r[0]) if n_fails else None
     else:
-        for k in ("n_fails", "base_rate", "top_decile_fails", "top_decile_capture", "top_decile_lift"):
+        for k in (
+            "n_fails",
+            "base_rate",
+            "top_decile_fails",
+            "top_decile_capture",
+            "top_decile_lift",
+        ):
             panel[k] = None
         for q in flag_rates:
             panel[f"recall_at_flag_{q:.2f}"] = None
@@ -145,7 +152,9 @@ def main() -> None:
     logger = setup_logging(logfile=LOGS / "scorecard.log")
     ap = argparse.ArgumentParser(description="Evaluate a scored batch against its true labels.")
     ap.add_argument("--score-run", required=True, help="score run id or 'latest'")
-    ap.add_argument("--label", default=None, help="with --score-run latest: pick latest of this label")
+    ap.add_argument(
+        "--label", default=None, help="with --score-run latest: pick latest of this label"
+    )
     ap.add_argument("--reference", default=None, help="reference score run id for deltas")
     ap.add_argument("--reference-label", default=None, help="reference label (implies latest)")
     args = ap.parse_args()
@@ -166,8 +175,8 @@ def main() -> None:
     capture = panel.get("top_decile_capture")
     lift = panel.get("top_decile_lift")
     note = (
-        f"label={panel['label']}; n={panel['n_scored']}; "
-        f"capture={capture:.2f} lift={lift:.1f}" if capture is not None and lift is not None
+        f"label={panel['label']}; n={panel['n_scored']}; capture={capture:.2f} lift={lift:.1f}"
+        if capture is not None and lift is not None
         else f"label={panel['label']}; n={panel['n_scored']}; unlabeled"
     )
     append_index(

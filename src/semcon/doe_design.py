@@ -12,8 +12,6 @@ from pyDOE3 import fracfact, fullfact
 
 from semcon import schema
 from semcon.config import load_config
-from semcon.paths import ARTIFACTS
-from semcon.tracking import make_run
 
 logger = logging.getLogger("semcon")
 
@@ -42,11 +40,7 @@ def _is_missingness_feature(name: str) -> bool:
 
 
 def _is_raw_sensor(name: str) -> bool:
-    return (
-        name.startswith(schema.SENSOR_PREFIX)
-        and len(name) == 4
-        and name[1:].isdigit()
-    )
+    return name.startswith(schema.SENSOR_PREFIX) and len(name) == 4 and name[1:].isdigit()
 
 
 def select_doe_factors(
