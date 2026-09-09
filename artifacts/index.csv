@@ -21,3 +21,6 @@ run_id,run_name,note,git_sha,data,snapshot_id,cv_aucpr_mean,cv_aucpr_std,thresho
 20260908_130826_scorecard__batch_b_shift,,label=batch_b_shift; n=100; capture=0.80 lift=8.0,49e9b6c,,,,,,,,,,,,scorecard,20260908_130816_score__batch_b_shift,,,,,
 20260908_130829_scorecard__batch_c_dropout,,label=batch_c_dropout; n=100; capture=0.89 lift=8.9,49e9b6c,,,,,,,,,,,,scorecard,20260908_130819_score__batch_c_dropout,,,,,
 20260908_130832_scorecard__holdout_replay,,label=holdout_replay; n=231; capture=0.36 lift=3.4,49e9b6c,,,,,,,,,,,,scorecard,20260908_130821_score__holdout_replay,,,,,
+20260909_094353_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
+20260909_094519_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
+20260909_094741_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,
