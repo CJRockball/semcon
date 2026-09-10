@@ -59,7 +59,8 @@ def _design_factor_columns(design: pd.DataFrame) -> list[str]:
         c
         for c in design.columns
         if not c.endswith("_coded")
-        and c not in {"run_id", "design_row", "is_center", "is_replicate", "replicate", "run_order"}
+        and c
+        not in {"run_id", "design_row", "is_center", "is_replicate", "replicate", "run_order"}
     ]
 
 
@@ -76,14 +77,34 @@ def _build_design_matrix(
     design: pd.DataFrame,
     factors: list[str],
 ) -> pd.DataFrame:
+    """Expand each design row over all selected background wafers.
+
+    Design metadata and coded factor columns are carried through so downstream
+    analysis can use coded -1/0/+1 terms and identify center/replicate rows.
+    """
+    metadata_cols = [
+        "run_id",
+        "run_order",
+        "design_row",
+        "is_center",
+        "is_replicate",
+        "replicate",
+    ]
+    coded_cols = [col for col in design.columns if col.endswith("_coded")]
+
     expanded = []
     for _, row in design.iterrows():
         block = background.copy()
+
         for factor in factors:
             block[factor] = row[factor]
-        block["run_id"] = row["run_id"]
-        block["run_order"] = row["run_order"]
+
+        for col in metadata_cols + coded_cols:
+            if col in design.columns:
+                block[col] = row[col]
+
         expanded.append(block)
+
     return pd.concat(expanded, ignore_index=True)
 
 
@@ -128,6 +149,12 @@ def _logit(p: np.ndarray, eps: float = 1e-12) -> np.ndarray:
 def _apply_noise(
     p: np.ndarray, noise_mode: str, gaussian_sigma: float | None, seed: int
 ) -> np.ndarray:
+    """Apply the configured simulated observation layer.
+
+    Bernoulli mode creates a 0/1 event sampled from the calibrated probability.
+    It is not physical wafer replication and must not replace p_cal as the
+    primary deterministic surrogate response.
+    """
     rng = np.random.default_rng(seed)
 
     if noise_mode == "bernoulli":
@@ -157,9 +184,24 @@ def score_design(
     raw, p_cal = _predict_probabilities(expanded, surrogate)
     y_noisy = _apply_noise(p_cal, noise_mode, gaussian_sigma, seed)
 
-    out = expanded[[schema.KEY_COL, schema.TIME_COL, "run_id", "run_order"]].copy()
-    for factor in factors:
-        out[factor] = expanded[factor].to_numpy()
+    metadata_cols = [
+        schema.KEY_COL,
+        schema.TIME_COL,
+        "run_id",
+        "run_order",
+        "design_row",
+        "is_center",
+        "is_replicate",
+        "replicate",
+    ]
+    coded_cols = [col for col in expanded.columns if col.endswith("_coded")]
+    factor_cols = factors
+
+    keep_cols = [
+        col for col in metadata_cols + coded_cols + factor_cols if col in expanded.columns
+    ]
+
+    out = expanded[keep_cols].copy()
     out["score_raw"] = raw
     out["p_cal"] = p_cal
     out["y_observed"] = y_noisy
@@ -244,9 +286,6 @@ def score_design_ood(
     mah = _mahalanobis_distance(pts, center, cov_inv)
     knn = _knn_distance(pts, ref, k=5)
 
-    # Compare DOE points against the observed support distribution, not against
-    # the DOE points themselves. This avoids the old 95th-percentile-of-design
-    # bug, where at least one generated point is always labelled OOD.
     ref_mah = _mahalanobis_distance(ref, center, cov_inv)
     ref_knn = _knn_distance(ref, ref, k=6)
 
@@ -315,10 +354,10 @@ def main(argv=None):
     args = parse_args(argv)
     setup_logging(logfile=LOGS / "doe_run.log")
 
-    cfg = load_config().doe
-    noise_mode = args.noise_mode or cfg.noise_mode
-    gaussian_sigma = args.gaussian_sigma if args.gaussian_sigma is not None else cfg.gaussian_sigma
-    seed = args.seed if args.seed is not None else cfg.seed
+    cfg = load_config()
+    noise_mode = args.noise_mode or cfg.doe.noise_mode
+    gaussian_sigma = args.gaussian_sigma if args.gaussian_sigma is not None else cfg.doe.gaussian_sigma
+    seed = args.seed if args.seed is not None else cfg.pipeline.seed
 
     design = pd.read_csv(args.design)
     surrogate = resolve_surrogate(run=args.run, no_cal=args.no_calibrate)
@@ -349,6 +388,10 @@ def main(argv=None):
         "note": args.note,
         "n_design_rows": int(len(design)),
         "n_background_rows": int(len(background)),
+        "noise_interpretation": (
+            "y_observed is a simulated Bernoulli outcome when noise_mode='bernoulli'; "
+            "it is not physical wafer replication."
+        ),
     }
 
     run_dir, predictions_path, ood_path, config_path = write_run_artifacts(
@@ -370,9 +413,10 @@ def main(argv=None):
     latest_pointer.write_text(f"{run_dir}\n", encoding="utf-8")
 
     logger.info("[doe_run] wrote %s", run_dir)
+    logger.info("[doe_run] predictions -> %s", predictions_path)
+    logger.info("[doe_run] OOD table -> %s", ood_path)
+    logger.info("[doe_run] config -> %s", config_path)
     logger.info("[doe_run] updated latest pointer -> %s", latest_pointer)
-
-    return
 
 
 if __name__ == "__main__":

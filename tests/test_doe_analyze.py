@@ -197,3 +197,4 @@ def test_write_analysis_artifacts(tmp_path: Path) -> None:
     }
 
     assert expected.issubset({path.name for path in tmp_path.iterdir()})
+

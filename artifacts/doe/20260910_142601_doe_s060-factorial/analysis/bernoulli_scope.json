@@ -1,0 +1,8 @@
+{
+  "analysis_type": "grouped_binomial_glm",
+  "response_source": "y_observed sampled from calibrated surrogate p_cal",
+  "noise_model": "Bernoulli",
+  "causal_claim": false,
+  "interpretation": "Coefficients describe how the calibrated surrogate's predicted failure probability varies across coded DOE settings under simulated Bernoulli sampling. They are not physical-process effects and do not establish that changing fab conditions will change yield.",
+  "physical_confirmation": "Requires randomized, blocked confirmation lots at mapped controllable recipe settings."
+}

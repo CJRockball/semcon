@@ -1,18 +1,18 @@
 """Analyze surrogate DOE runs.
 
-This module consumes design_predictions.parquet from doe_run.py and produces:
-- design-cell summaries,
-- main-effect and interaction estimates,
-- binomial-GLM / OLS model outputs,
-- residual diagnostics,
-- effect and interaction figures,
-- a bounded surrogate recommendation.
+Primary analysis:
+- summarize the deterministic calibrated surrogate response, p_cal;
+- estimate main effects/interactions on coded factor values;
+- produce diagnostics, plots, and a bounded surrogate recommendation.
 
-Important:
+Secondary analysis:
+- group simulated y_observed outcomes per design row;
+- fit a binomial GLM to failures/passes;
+- report that analysis explicitly as simulated Bernoulli sampling conditioned
+  on the calibrated surrogate, not physical process replication.
+
 This analyzes a calibrated-model surrogate, not physical fab experiments.
-The results express what the current model believes within observed support.
-They are hypothesis-generation evidence only; real controlled lots are
-required for causal confirmation.
+Real controlled lots are required for causal confirmation.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from scipy.stats import probplot
 
@@ -43,6 +44,13 @@ REQUIRED_COLUMNS = {
     "score_raw",
     "p_cal",
     "y_observed",
+}
+
+DESIGN_METADATA_COLUMNS = {
+    "design_row",
+    "is_center",
+    "is_replicate",
+    "replicate",
 }
 
 
@@ -66,16 +74,15 @@ def load_predictions(path: Path) -> pd.DataFrame:
 
 
 def infer_factors(df: pd.DataFrame) -> list[str]:
-    """Infer DOE factor columns from the run output."""
+    """Infer actual DOE factor columns from the run output."""
     excluded = REQUIRED_COLUMNS | {
         "wafer_id",
         "timestamp",
         "rank",
         "decile",
-        "design_row",
-        "is_center",
-        "is_replicate",
-        "replicate",
+        "split",
+        "is_fail",
+        *DESIGN_METADATA_COLUMNS,
     }
 
     factors = [
@@ -92,17 +99,36 @@ def infer_factors(df: pd.DataFrame) -> list[str]:
     return factors
 
 
+def infer_coded_factors(df: pd.DataFrame, factors: list[str]) -> list[str]:
+    """Infer coded columns and validate one-to-one alignment with actual factors."""
+    coded = [f"{factor}_coded" for factor in factors]
+    missing = [col for col in coded if col not in df.columns]
+    if missing:
+        raise ValueError(
+            "Missing coded DOE factor columns in design_predictions.parquet: "
+            f"{missing}. Regenerate the run with the updated doe_run.py."
+        )
+    return coded
+
+
 def summarize_design_cells(
     df: pd.DataFrame,
     factors: list[str],
+    coded_factors: list[str] | None = None,
     response: str = "p_cal",
 ) -> pd.DataFrame:
-    """Aggregate wafer-level predictions into one summary per DOE design cell."""
+    """Aggregate wafer-level predictions into one summary per DOE design row."""
     if response not in df.columns:
         raise ValueError(f"Response column {response!r} not found")
 
+    group_cols = ["run_id", "run_order", *factors]
+    if coded_factors:
+        group_cols.extend(coded_factors)
+
+    group_cols = list(dict.fromkeys(group_cols))
+
     grouped = (
-        df.groupby(["run_id", "run_order", *factors], dropna=False)[response]
+        df.groupby(group_cols, dropna=False)[response]
         .agg(["mean", "std", "count"])
         .reset_index()
         .rename(
@@ -147,7 +173,7 @@ def fit_effect_model(
 
 
 def effects_table(model) -> pd.DataFrame:
-    """Return model coefficients, uncertainty, and p-values as a tidy table."""
+    """Return OLS model coefficients, uncertainty, and p-values as a tidy table."""
     out = pd.DataFrame(
         {
             "term": model.params.index,
@@ -160,6 +186,7 @@ def effects_table(model) -> pd.DataFrame:
 
     out["abs_estimate"] = out["estimate"].abs()
     out["is_interaction"] = out["term"].str.contains(":", regex=False)
+    out["analysis_scope"] = "deterministic calibrated surrogate response"
     return out.sort_values("abs_estimate", ascending=False).reset_index(drop=True)
 
 
@@ -168,7 +195,7 @@ def main_effects_table(
     factors: list[str],
     response: str = "p_cal_mean",
 ) -> pd.DataFrame:
-    """Calculate simple high-minus-low contrasts for each factor."""
+    """Calculate simple high-minus-low contrasts for each actual factor."""
     rows = []
 
     for factor in factors:
@@ -204,27 +231,32 @@ def check_curvature(
 ) -> dict:
     """Compare center-point response to factorial-corner response.
 
-    Center points are inferred when all factor values equal their midpoint.
-    If there are no center points, return an explicit unavailable result.
+    This is a deterministic surrogate curvature check. Duplicate center rows
+    do not create physical pure error when the model input is unchanged.
     """
-    midpoints = {
-        factor: (cell_summary[factor].min() + cell_summary[factor].max()) / 2.0
-        for factor in factors
-    }
+    if "is_center" in cell_summary.columns:
+        center = cell_summary.loc[cell_summary["is_center"], response]
+        corners = cell_summary.loc[~cell_summary["is_center"], response]
+    else:
+        midpoints = {
+            factor: (cell_summary[factor].min() + cell_summary[factor].max()) / 2.0
+            for factor in factors
+        }
 
-    is_center = np.ones(len(cell_summary), dtype=bool)
-    for factor, midpoint in midpoints.items():
-        is_center &= np.isclose(cell_summary[factor].to_numpy(), midpoint)
+        is_center = np.ones(len(cell_summary), dtype=bool)
+        for factor, midpoint in midpoints.items():
+            is_center &= np.isclose(cell_summary[factor].to_numpy(), midpoint)
 
-    center = cell_summary.loc[is_center, response]
-    corners = cell_summary.loc[~is_center, response]
+        center = cell_summary.loc[is_center, response]
+        corners = cell_summary.loc[~is_center, response]
 
     if center.empty:
         return {
             "available": False,
             "center_mean": None,
-            "corner_mean": float(corners.mean()),
+            "corner_mean": float(corners.mean()) if not corners.empty else None,
             "difference": None,
+            "interpretation": "No center-point rows found in the design.",
         }
 
     center_mean = float(center.mean())
@@ -235,6 +267,11 @@ def check_curvature(
         "center_mean": center_mean,
         "corner_mean": corner_mean,
         "difference": center_mean - corner_mean,
+        "n_center_rows": int(center.shape[0]),
+        "interpretation": (
+            "Deterministic surrogate curvature check; duplicate center rows do "
+            "not estimate physical process replication error."
+        ),
     }
 
 
@@ -247,6 +284,151 @@ def residual_diagnostics(model) -> pd.DataFrame:
             "studentized_residual": model.get_influence().resid_studentized_internal,
         }
     )
+
+
+def summarize_bernoulli_cells(
+    df: pd.DataFrame,
+    factors: list[str],
+    coded_factors: list[str],
+) -> pd.DataFrame:
+    """Aggregate simulated Bernoulli outcomes per DOE design row.
+
+    For each design row, all background rows are scored and one y_observed is
+    sampled from p_cal for each background context. This function aggregates
+    those simulated binary outcomes into failures/passes/trials.
+    """
+    if "y_observed" not in df.columns:
+        raise ValueError("y_observed is required for grouped Bernoulli analysis")
+
+    group_cols = [
+        "run_id",
+        "run_order",
+        "design_row",
+        "is_center",
+        "is_replicate",
+        "replicate",
+        *factors,
+        *coded_factors,
+    ]
+    group_cols = [col for col in dict.fromkeys(group_cols) if col in df.columns]
+
+    grouped = (
+        df.groupby(group_cols, dropna=False)
+        .agg(
+            simulated_failures=("y_observed", "sum"),
+            n_trials=("y_observed", "size"),
+            expected_failures_from_p_cal=("p_cal", "sum"),
+            expected_failure_rate_from_p_cal=("p_cal", "mean"),
+        )
+        .reset_index()
+    )
+
+    grouped["simulated_failures"] = grouped["simulated_failures"].astype(int)
+    grouped["n_trials"] = grouped["n_trials"].astype(int)
+    grouped["simulated_passes"] = grouped["n_trials"] - grouped["simulated_failures"]
+    grouped["simulated_failure_rate"] = (
+        grouped["simulated_failures"] / grouped["n_trials"]
+    )
+
+    return grouped.sort_values("run_order").reset_index(drop=True)
+
+
+def _build_glm_design_matrix(
+    bernoulli_cells: pd.DataFrame,
+    coded_factors: list[str],
+    include_interactions: bool,
+) -> pd.DataFrame:
+    """Build coded-factor design matrix for grouped binomial GLM."""
+    X = bernoulli_cells[coded_factors].copy()
+
+    if include_interactions:
+        for i, factor_a in enumerate(coded_factors):
+            for factor_b in coded_factors[i + 1 :]:
+                X[f"{factor_a}:{factor_b}"] = (
+                    bernoulli_cells[factor_a] * bernoulli_cells[factor_b]
+                )
+
+    return sm.add_constant(X, has_constant="add")
+
+
+def fit_bernoulli_glm(
+    bernoulli_cells: pd.DataFrame,
+    coded_factors: list[str],
+    *,
+    include_interactions: bool = True,
+):
+    """Fit a grouped binomial GLM to simulated Bernoulli outcomes.
+
+    The response is [simulated_failures, simulated_passes]. This is a
+    secondary simulation analysis conditioned on calibrated surrogate
+    probabilities; it does not estimate physical process replication error.
+    """
+    if bernoulli_cells.empty:
+        raise ValueError("bernoulli_cells is empty")
+    if len(coded_factors) < 2:
+        raise ValueError("Need at least two coded factors for the GLM")
+
+    required = {"simulated_failures", "simulated_passes"}
+    missing = required - set(bernoulli_cells.columns)
+    if missing:
+        raise ValueError(f"bernoulli_cells missing columns: {sorted(missing)}")
+
+    X = _build_glm_design_matrix(
+        bernoulli_cells,
+        coded_factors,
+        include_interactions=include_interactions,
+    )
+    y = bernoulli_cells[
+        ["simulated_failures", "simulated_passes"]
+    ].to_numpy(dtype=float)
+
+    return sm.GLM(y, X, family=sm.families.Binomial()).fit()
+
+
+def bernoulli_effects_table(model) -> pd.DataFrame:
+    """Return grouped-binomial GLM coefficients as a tidy table."""
+    out = pd.DataFrame(
+        {
+            "term": model.params.index,
+            "estimate_log_odds": model.params.values,
+            "std_error": model.bse.values,
+            "z_value": model.tvalues.values,
+            "p_value": model.pvalues.values,
+        }
+    )
+
+    out["odds_ratio"] = np.exp(out["estimate_log_odds"])
+    out["abs_estimate_log_odds"] = out["estimate_log_odds"].abs()
+    out["is_interaction"] = out["term"].str.contains(":", regex=False)
+    out["analysis_scope"] = (
+        "simulated Bernoulli response conditioned on calibrated surrogate"
+    )
+
+    return out.sort_values(
+        "abs_estimate_log_odds",
+        ascending=False,
+    ).reset_index(drop=True)
+
+
+def bernoulli_scope() -> dict:
+    """Describe what the simulated binary-response GLM means."""
+    return {
+        "analysis_type": "grouped_binomial_glm",
+        "response_source": "y_observed sampled from calibrated surrogate p_cal",
+        "noise_model": "Bernoulli",
+        "causal_claim": False,
+        "interpretation": (
+            "Coefficients describe how the calibrated surrogate's predicted "
+            "failure probability varies across coded DOE settings under "
+            "simulated Bernoulli sampling. They are not physical-process "
+            "effects and do not establish that changing fab conditions will "
+            "change yield."
+        ),
+        "physical_confirmation": (
+            "Requires randomized, blocked confirmation lots at mapped "
+            "controllable recipe settings."
+        ),
+    }
 
 
 def save_effects_pareto(effects: pd.DataFrame, output_path: Path) -> None:
@@ -365,6 +547,9 @@ def write_analysis_artifacts(
     curvature: dict,
     recommendation: dict,
     model,
+    bernoulli_cells: pd.DataFrame | None = None,
+    bernoulli_effects: pd.DataFrame | None = None,
+    bernoulli_model=None,
 ) -> None:
     """Write tabular and structured DOE analysis artifacts."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -382,6 +567,21 @@ def write_analysis_artifacts(
 
     (output_dir / "model_summary.txt").write_text(model.summary().as_text(), encoding="utf-8")
 
+    if bernoulli_cells is not None:
+        bernoulli_cells.to_csv(output_dir / "bernoulli_cell_summary.csv", index=False)
+
+    if bernoulli_effects is not None:
+        bernoulli_effects.to_csv(output_dir / "bernoulli_effects_table.csv", index=False)
+
+    if bernoulli_model is not None:
+        (output_dir / "bernoulli_model_summary.txt").write_text(
+            bernoulli_model.summary().as_text(),
+            encoding="utf-8",
+        )
+
+        with open(output_dir / "bernoulli_scope.json", "w", encoding="utf-8") as f:
+            json.dump(bernoulli_scope(), f, indent=2)
+
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="Analyze a surrogate DOE run")
@@ -398,13 +598,18 @@ def parse_args(argv=None):
     parser.add_argument(
         "--response",
         default="p_cal",
-        choices=["p_cal", "score_raw", "y_observed"],
-        help="Surrogate response to summarize and analyze",
+        choices=["p_cal", "score_raw"],
+        help="Primary deterministic surrogate response to analyze",
     )
     parser.add_argument(
         "--no-interactions",
         action="store_true",
-        help="Fit main effects only",
+        help="Fit main effects only in both surrogate and Bernoulli models",
+    )
+    parser.add_argument(
+        "--no-bernoulli",
+        action="store_true",
+        help="Skip grouped simulated Bernoulli GLM analysis",
     )
     return parser.parse_args(argv)
 
@@ -418,12 +623,19 @@ def main(argv=None):
 
     df = load_predictions(predictions_path)
     factors = infer_factors(df)
-    cell_summary = summarize_design_cells(df, factors, response=args.response)
+    coded_factors = infer_coded_factors(df, factors)
+
+    cell_summary = summarize_design_cells(
+        df,
+        factors,
+        coded_factors=coded_factors,
+        response=args.response,
+    )
 
     response_col = f"{args.response}_mean"
     model = fit_effect_model(
         cell_summary,
-        factors,
+        coded_factors,
         response=response_col,
         include_interactions=not args.no_interactions,
     )
@@ -439,6 +651,23 @@ def main(argv=None):
         maximize=False,
     )
 
+    bernoulli_cells = None
+    bernoulli_model = None
+    bernoulli_effects = None
+
+    if not args.no_bernoulli:
+        bernoulli_cells = summarize_bernoulli_cells(
+            df,
+            factors,
+            coded_factors,
+        )
+        bernoulli_model = fit_bernoulli_glm(
+            bernoulli_cells,
+            coded_factors,
+            include_interactions=not args.no_interactions,
+        )
+        bernoulli_effects = bernoulli_effects_table(bernoulli_model)
+
     write_analysis_artifacts(
         output_dir,
         cell_summary,
@@ -448,6 +677,9 @@ def main(argv=None):
         curvature,
         recommendation,
         model,
+        bernoulli_cells=bernoulli_cells,
+        bernoulli_effects=bernoulli_effects,
+        bernoulli_model=bernoulli_model,
     )
 
     save_effects_pareto(effects, output_dir / "effects_pareto.png")
@@ -465,10 +697,14 @@ def main(argv=None):
             )
 
     logger.info("[doe_analyze] factors=%s", factors)
+    logger.info("[doe_analyze] coded factors=%s", coded_factors)
     logger.info("[doe_analyze] recommendation=%s", recommendation)
+    if bernoulli_effects is not None:
+        logger.info(
+            "[doe_analyze] grouped Bernoulli GLM is simulation-only; "
+            "see bernoulli_scope.json"
+        )
     logger.info("[doe_analyze] done -> %s", output_dir)
-
-    return
 
 
 if __name__ == "__main__":

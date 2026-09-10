@@ -3,3 +3,6 @@ run_id,run_name,note,git_sha,data,snapshot_id,cv_aucpr_mean,cv_aucpr_std,thresho
 20260910_104119_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260910_104025_xgb_sel,platt,0.1193,0.0609,0.0605,0.0574,,,,
 20260910_104123_doe-design_s060-factorial,doe-design_s060-factorial,,,,,,,,,,,,,,doe_design,20260910_104025_xgb_sel,,,,,,11.0,3.0,,
 20260910_104128_doe_s060-factorial,,,,,,,,,,,,,,,doe,20260910_104025_xgb_sel,,,,,,11.0,,1309.0,bernoulli
+20260910_142127_doe_demo,,test,,,,,,,,,,,,,doe,train,,,,,,,,,
+20260910_142238_doe-design_s060-factorial,doe-design_s060-factorial,,,,,,,,,,,,,,doe_design,20260910_104025_xgb_sel,,,,,,11.0,3.0,,
+20260910_142601_doe_s060-factorial,,,,,,,,,,,,,,,doe,20260910_104025_xgb_sel,,,,,,11.0,,1309.0,bernoulli
