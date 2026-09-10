@@ -121,11 +121,11 @@ def build_factorial_design(
     seed: int | None = None,
 ) -> pd.DataFrame:
     """Build a two-level factorial design table using pyDOE3."""
-    cfg = load_config().doe
-    center_points = cfg.center_points if center_points is None else center_points
-    replicates = cfg.replicates if replicates is None else replicates
-    randomize = cfg.randomize if randomize is None else randomize
-    seed = cfg.seed if seed is None else seed
+    cfg = load_config()
+    center_points = cfg.doe.center_points if center_points is None else center_points
+    replicates = cfg.doe.replicates if replicates is None else replicates
+    randomize = cfg.doe.randomize if randomize is None else randomize
+    seed = cfg.pipeline.seed if seed is None else seed
 
     factor_names = [f["name"] for f in factors]
     if len(factor_names) < 2:
@@ -183,12 +183,12 @@ def describe_design(
     seed: int | None = None,
 ) -> dict:
     """Return a JSON-serializable description of the design configuration."""
-    cfg = load_config().doe
+    cfg = load_config()
     return {
-        "seed": cfg.seed if seed is None else seed,
-        "center_points": cfg.center_points if center_points is None else center_points,
-        "replicates": cfg.replicates if replicates is None else replicates,
-        "randomize": cfg.randomize if randomize is None else randomize,
+        "seed": cfg.pipeline.seed if seed is None else seed,
+        "center_points": cfg.doe.center_points if center_points is None else center_points,
+        "replicates": cfg.doe.replicates if replicates is None else replicates,
+        "randomize": cfg.doe.randomize if randomize is None else randomize,
         "fraction": fraction,
         "run_prefix": run_prefix,
         "factors": factors,
@@ -513,8 +513,9 @@ def main(argv=None):
 
     latest_pointer = ARTIFACTS / "doe" / "latest_design"
     latest_pointer.parent.mkdir(parents=True, exist_ok=True)
-    latest_pointer.write_text(f"{run_dir}\n", encoding="utf-8")
-
+    latest_pointer.write_text(
+        f"{run_dir.relative_to(ARTIFACTS.parent)}\n", encoding="utf-8"
+    )
     logger.info("[doe_design] parent=%s", train_id)
     logger.info("[doe_design] selected factors=%s", [f["name"] for f in factors])
     logger.info("[doe_design] wrote design -> %s", design_csv)

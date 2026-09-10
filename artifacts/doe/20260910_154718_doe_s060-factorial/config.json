@@ -1,0 +1,29 @@
+{
+  "run_id": "20260910_154718_doe_s060-factorial",
+  "timestamp": "20260910_154718",
+  "git_sha": "f22c210",
+  "python": "3.11.14",
+  "packages": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "xgboost": "2.1.1"
+  },
+  "note": "",
+  "config": {
+    "script": "doe_run",
+    "label": "s060-factorial",
+    "background_start": "2008-07-19 00:00:00",
+    "background_end": "2008-10-05 05:29:59",
+    "run": "latest",
+    "train_run": "20260910_154611_xgb_sel",
+    "cal_run": "20260910_154711_cal-platt__xgb_sel",
+    "noise_mode": "bernoulli",
+    "gaussian_sigma": null,
+    "seed": 1337,
+    "note": "",
+    "n_design_rows": 11,
+    "n_background_rows": 1309,
+    "noise_interpretation": "y_observed is a simulated Bernoulli outcome when noise_mode='bernoulli'; it is not physical wafer replication."
+  }
+}

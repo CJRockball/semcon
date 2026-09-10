@@ -14,3 +14,7 @@ run_id,type,parent_run,note,run_name,git_sha,data,snapshot_id,cv_aucpr_mean,cv_a
 20260910_145703_doe-design_s060-factorial,doe_design,20260910_145542_xgb_sel,,doe-design_s060-factorial,,,,,,,,,,,,,,,,,,11.0,3.0,,
 20260910_145707_doe_s060-factorial,doe,20260910_145542_xgb_sel,,,,,,,,,,,,,,,,,,,,11.0,,1309.0,bernoulli
 20260910_150001_doe_demo,doe,train,test,,,,,,,,,,,,,,,,,,,,,,
+20260910_154611_xgb_sel,,,,xgb_sel,f22c210,20f0e7ee434f7dcb,20260910_074700_c9104287,0.2251943557751336,0.0623650034814821,0.5807785391807556,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.1428571428571428,,,,,,,,,
+20260910_154711_cal-platt__xgb_sel,calibration,20260910_154611_xgb_sel,,,,,,,,,0.1479,,,,,,platt,0.1193,0.0609,0.0605,0.0574,,,,
+20260910_154714_doe-design_s060-factorial,doe_design,20260910_154611_xgb_sel,,doe-design_s060-factorial,,,,,,,,,,,,,,,,,,11.0,3.0,,
+20260910_154718_doe_s060-factorial,doe,20260910_154611_xgb_sel,,,,,,,,,,,,,,,,,,,,11.0,,1309.0,bernoulli

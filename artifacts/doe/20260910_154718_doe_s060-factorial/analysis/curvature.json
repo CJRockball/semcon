@@ -1,0 +1,8 @@
+{
+  "available": true,
+  "center_mean": 0.046565015361050614,
+  "corner_mean": 0.04545189171307009,
+  "difference": 0.001113123647980524,
+  "n_center_rows": 3,
+  "interpretation": "Deterministic surrogate curvature check; duplicate center rows do not estimate physical process replication error."
+}

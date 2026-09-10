@@ -407,9 +407,11 @@ def main(argv=None):
     }
     append_doe_index(run_dir, metrics)
 
-    latest_pointer = DOE_ROOT / "latest_run"
+    latest_pointer = ARTIFACTS / "doe" / "latest_run"
     latest_pointer.parent.mkdir(parents=True, exist_ok=True)
-    latest_pointer.write_text(f"{run_dir}\n", encoding="utf-8")
+    latest_pointer.write_text(
+        f"{run_dir.relative_to(ARTIFACTS.parent)}\n", encoding="utf-8"
+    )
 
     logger.info("[doe_run] wrote %s", run_dir)
     logger.info("[doe_run] predictions -> %s", predictions_path)

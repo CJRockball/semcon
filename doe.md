@@ -168,7 +168,6 @@ Pointers: `artifacts/doe/latest_design`, `artifacts/doe/latest_run`.
 
 | Field | Default | Meaning |
 |---|---|---|
-| `seed` | 1337 | RNG for randomization and Bernoulli draws |
 | `max_factors` | 4 | Cap on design factors |
 | `center_points` | 3 | Center rows appended to the factorial |
 | `replicates` | 1 | Full-design replicates |

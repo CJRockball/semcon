@@ -128,8 +128,6 @@ def summarize_design_cells(
     group_cols += [*factors, *(coded_factors or [])]
     group_cols = list(dict.fromkeys(group_cols))
 
-    group_cols = list(dict.fromkeys(group_cols))
-
     grouped = (
         df.groupby(group_cols, dropna=False)[response]
         .agg(["mean", "std", "count"])

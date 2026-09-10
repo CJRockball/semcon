@@ -66,3 +66,6 @@ data/snapshots/**/*.parquet
 # --- Editor / OS ---
 .DS_Store
 # .vscode/   # uncomment if workspace settings should stay out of git
+# DOE latest-pointers: machine-local mutable state
+artifacts/doe/latest_design
+artifacts/doe/latest_run
