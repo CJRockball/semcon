@@ -186,7 +186,10 @@ def test_score_design_ood_flags_expected_structure() -> None:
 
 
 def test_write_run_artifacts_and_append_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("semcon.doe_run.DOE_ROOT", tmp_path / "doe")
+    fake_artifacts = tmp_path / "artifacts"
+    monkeypatch.setattr("semcon.doe_run.DOE_ROOT", fake_artifacts / "doe")
+    monkeypatch.setattr("semcon.tracking.ARTIFACTS", fake_artifacts)
+
     predictions = pd.DataFrame({"run_id": ["doe_001"], "score_raw": [0.1], "p_cal": [0.2]})
     ood = pd.DataFrame({"run_id": ["doe_001"], "mahalanobis": [1.0], "knn_distance": [0.5]})
     run_config = {"label": "demo", "note": "test"}

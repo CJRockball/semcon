@@ -1,0 +1,23 @@
+{
+  "snapshot_id": "20260910_083559_50e097e0",
+  "layer": "gold",
+  "created": "2026-09-10T08:35:59.699828+00:00",
+  "rows": 1309,
+  "cols": 263,
+  "git_sha": "7b72007619eb7db14932613d555f2b286cfd451b",
+  "config": {
+    "cutoff": "2008-10-05 05:30:00",
+    "tail_n": 27,
+    "holdout_n": 231,
+    "seed": 1337,
+    "use_selection": false
+  },
+  "fingerprint": {
+    "raw": {
+      "secom_labels.data": "126884cf453705c9e61a903fe906f0665a3b45ce3639e621edc5c93c89627e03",
+      "secom.data": "20f0e7ee434f7dcbae0eea9ffff009a2b57f42d6b0dc9a5bd4f00782c0a3374c"
+    },
+    "extract_sql_sha256": "b80c407b2bc23e36d2b752314b9443003bb199a9a41660f7073f150a7e8d528e"
+  },
+  "parquet_sha256": "50e097e0ebe3395120a0aad2c9dd6a71f2edb5431cf8f17c9c181511a5a623c2"
+}
