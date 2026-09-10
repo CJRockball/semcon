@@ -121,9 +121,12 @@ def summarize_design_cells(
     if response not in df.columns:
         raise ValueError(f"Response column {response!r} not found")
 
-    group_cols = ["run_id", "run_order", *factors]
-    if coded_factors:
-        group_cols.extend(coded_factors)
+    group_cols = ["run_id", "run_order"]
+    for col in ("design_row", "is_center", "is_replicate", "replicate"):
+        if col in df.columns:
+            group_cols.append(col)
+    group_cols += [*factors, *(coded_factors or [])]
+    group_cols = list(dict.fromkeys(group_cols))
 
     group_cols = list(dict.fromkeys(group_cols))
 

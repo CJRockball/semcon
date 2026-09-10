@@ -4,7 +4,7 @@ Dep. Variable:             p_cal_mean   R-squared:                       0.993
 Model:                            OLS   Adj. R-squared:                  0.983
 Method:                 Least Squares   F-statistic:                     97.62
 Date:                Thu, 10 Sep 2026   Prob (F-statistic):           0.000274
-Time:                        14:57:10   Log-Likelihood:                 59.081
+Time:                        15:14:47   Log-Likelihood:                 59.081
 No. Observations:                  11   AIC:                            -104.2
 Df Residuals:                       4   BIC:                            -101.4
 Df Model:                           6                                         
