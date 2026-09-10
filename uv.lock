@@ -2535,6 +2535,21 @@ wheels = [
 ]
 
 [[package]]
+name = "pydoe3"
+version = "1.6.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/83/4f/7ce86c4eee42019efcc49ca8a54f7896cc41c719be24bfbd8a3facde6a35/pydoe3-1.6.2.tar.gz", hash = "sha256:ff7377c30e0a2ea8af3f074723488779f557457c8b74029965896c30b8a1a541", size = 1014559, upload-time = "2026-01-12T07:33:43.216Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/6e/3b16b75e1e011f95109be5dcec3d1f1d5a8585e6c42b6c5bbb17852d66b2/pydoe3-1.6.2-py2.py3-none-any.whl", hash = "sha256:21b5c3ef10a350bed01f59df54ae262fd1eda9983efac294b679988f311f3445", size = 66753, upload-time = "2026-01-12T07:33:41.387Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3177,6 +3192,7 @@ dependencies = [
     { name = "pulp" },
     { name = "pyarrow" },
     { name = "pydantic" },
+    { name = "pydoe3" },
     { name = "scikit-learn" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -3207,6 +3223,7 @@ requires-dist = [
     { name = "pulp", specifier = ">=2.8" },
     { name = "pyarrow", specifier = ">=15.0" },
     { name = "pydantic", specifier = ">=2.0,<3.0" },
+    { name = "pydoe3", specifier = ">=1.6.2" },
     { name = "scikit-learn", specifier = ">=1.4,<2.0" },
     { name = "scipy", specifier = ">=1.11" },
     { name = "seaborn", specifier = ">=0.13" },

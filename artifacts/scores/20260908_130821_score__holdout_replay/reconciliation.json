@@ -1,8 +1,0 @@
-{
-  "reference": "p_hold_cal.parquet",
-  "mode": "keyed",
-  "n_reference": 231,
-  "n_scored": 231,
-  "max_abs_diff": 7.245863520299878e-09,
-  "verdict": "pass"
-}

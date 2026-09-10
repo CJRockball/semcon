@@ -1,23 +1,14 @@
-run_id,run_name,note,git_sha,data,snapshot_id,cv_aucpr_mean,cv_aucpr_std,threshold,holdout_aucpr,holdout_rocauc,holdout_brier,holdout_recall,holdout_precision,flagrate_recall,type,parent_run,method,brier_oof_raw,brier_oof_cal,brier_holdout_raw,brier_holdout_cal
-20260908_103616_xgb_sel,xgb_sel,,72a08e7,20f0e7ee434f7dcb,20260908_023654_c9104287,0.2251943557751336,0.0623650034814821,0.5807785391807556,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.1428571428571428,,,,,,,
-20260908_103706_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260908_103616_xgb_sel,platt,0.1193,0.0609,0.0605,0.0574
-20260908_103712_score__batch_a_clean,,window 2026-01-05 00:00..2026-01-09 03:01; cal=20260908_103706_cal-platt__xgb_sel; n=100,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
-20260908_103714_score__batch_b_shift,,window 2026-01-12 00:00..2026-01-16 03:01; cal=20260908_103706_cal-platt__xgb_sel; n=100,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
-20260908_103717_score__batch_c_dropout,,window 2026-01-19 00:00..2026-01-23 03:01; cal=20260908_103706_cal-platt__xgb_sel; n=100,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
-20260908_103719_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260908_103706_cal-platt__xgb_sel; n=231,72a08e7,,,,,,,,,,,,score,20260908_103616_xgb_sel,,,,,
-20260908_111655_xgb_sel,xgb_sel,,49e9b6c,20f0e7ee434f7dcb,20260908_031736_c9104287,0.2251943557751336,0.0623650034814821,0.5807785391807556,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.1428571428571428,,,,,,,
-20260908_111747_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260908_111655_xgb_sel,platt,0.1193,0.0609,0.0605,0.0574
-20260908_111753_score__batch_a_clean,,window 2026-01-05 00:00..2026-01-09 03:01; cal=20260908_111747_cal-platt__xgb_sel; n=100,49e9b6c,,,,,,,,,,,,score,20260908_111655_xgb_sel,,,,,
-20260908_111755_score__batch_b_shift,,window 2026-01-12 00:00..2026-01-16 03:01; cal=20260908_111747_cal-platt__xgb_sel; n=100,49e9b6c,,,,,,,,,,,,score,20260908_111655_xgb_sel,,,,,
-20260908_111758_score__batch_c_dropout,,window 2026-01-19 00:00..2026-01-23 03:01; cal=20260908_111747_cal-platt__xgb_sel; n=100,49e9b6c,,,,,,,,,,,,score,20260908_111655_xgb_sel,,,,,
-20260908_111801_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260908_111747_cal-platt__xgb_sel; n=231,49e9b6c,,,,,,,,,,,,score,20260908_111655_xgb_sel,,,,,
-20260908_130716_xgb_sel,xgb_sel,,49e9b6c,20f0e7ee434f7dcb,20260908_050758_c9104287,0.2251943557751336,0.0623650034814821,0.5807785391807556,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.1428571428571428,,,,,,,
-20260908_130808_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260908_130716_xgb_sel,platt,0.1193,0.0609,0.0605,0.0574
-20260908_130814_score__batch_a_clean,,window 2026-01-05 00:00..2026-01-09 03:01; cal=20260908_130808_cal-platt__xgb_sel; n=100,49e9b6c,,,,,,,,,,,,score,20260908_130716_xgb_sel,,,,,
-20260908_130816_score__batch_b_shift,,window 2026-01-12 00:00..2026-01-16 03:01; cal=20260908_130808_cal-platt__xgb_sel; n=100,49e9b6c,,,,,,,,,,,,score,20260908_130716_xgb_sel,,,,,
-20260908_130819_score__batch_c_dropout,,window 2026-01-19 00:00..2026-01-23 03:01; cal=20260908_130808_cal-platt__xgb_sel; n=100,49e9b6c,,,,,,,,,,,,score,20260908_130716_xgb_sel,,,,,
-20260908_130821_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260908_130808_cal-platt__xgb_sel; n=231,49e9b6c,,,,,,,,,,,,score,20260908_130716_xgb_sel,,,,,
-20260908_130823_scorecard__batch_a_clean,,label=batch_a_clean; n=100; capture=0.75 lift=7.5,49e9b6c,,,,,,,,,,,,scorecard,20260908_130814_score__batch_a_clean,,,,,
-20260908_130826_scorecard__batch_b_shift,,label=batch_b_shift; n=100; capture=0.80 lift=8.0,49e9b6c,,,,,,,,,,,,scorecard,20260908_130816_score__batch_b_shift,,,,,
-20260908_130829_scorecard__batch_c_dropout,,label=batch_c_dropout; n=100; capture=0.89 lift=8.9,49e9b6c,,,,,,,,,,,,scorecard,20260908_130819_score__batch_c_dropout,,,,,
-20260908_130832_scorecard__holdout_replay,,label=holdout_replay; n=231; capture=0.36 lift=3.4,49e9b6c,,,,,,,,,,,,scorecard,20260908_130821_score__holdout_replay,,,,,
+run_id,run_name,note,git_sha,data,snapshot_id,cv_aucpr_mean,cv_aucpr_std,threshold,holdout_aucpr,holdout_rocauc,holdout_brier,holdout_recall,holdout_precision,flagrate_recall,type,parent_run,method,brier_oof_raw,brier_oof_cal,brier_holdout_raw,brier_holdout_cal,n_design_rows,n_factors,n_background_rows,noise_mode
+20260910_163417_xgb_base,xgb_base,,7b72007,20f0e7ee434f7dcb,20260910_083559_50e097e0,0.2691679555155962,0.0733190660915131,0.5541023015975952,0.0916024135319177,0.6053324555628703,0.060229904949665,0.0,0.0,0.0,,,,,,,,,,,
+20260910_163610_xgb_sel,xgb_sel,,7b72007,20f0e7ee434f7dcb,20260910_083654_c9104287,0.2251943557751336,0.0623650034814821,0.5807785391807556,0.1478812652349397,0.6974983541803819,0.06050930544734,0.0,0.0,0.1428571428571428,,,,,,,,,,,
+20260910_163705_cal-platt__xgb_sel,,,,,,,,,0.1479,,,,,,calibration,20260910_163610_xgb_sel,platt,0.1193,0.0609,0.0605,0.0574,,,,
+20260910_163711_score__batch_a_clean,,window 2026-01-05 00:00..2026-01-09 03:01; cal=20260910_163705_cal-platt__xgb_sel; n=100,7b72007,,,,,,,,,,,,score,20260910_163610_xgb_sel,,,,,,,,,
+20260910_163714_score__batch_b_shift,,window 2026-01-12 00:00..2026-01-16 03:01; cal=20260910_163705_cal-platt__xgb_sel; n=100,7b72007,,,,,,,,,,,,score,20260910_163610_xgb_sel,,,,,,,,,
+20260910_163716_score__batch_c_dropout,,window 2026-01-19 00:00..2026-01-23 03:01; cal=20260910_163705_cal-platt__xgb_sel; n=100,7b72007,,,,,,,,,,,,score,20260910_163610_xgb_sel,,,,,,,,,
+20260910_163718_score__holdout_replay,,window 2008-10-05 05:30:59..2008-10-15 19:24:01; cal=20260910_163705_cal-platt__xgb_sel; n=231,7b72007,,,,,,,,,,,,score,20260910_163610_xgb_sel,,,,,,,,,
+20260910_163721_scorecard__batch_a_clean,,label=batch_a_clean; n=100; capture=0.75 lift=7.5,7b72007,,,,,,,,,,,,scorecard,20260910_163711_score__batch_a_clean,,,,,,,,,
+20260910_163724_scorecard__batch_b_shift,,label=batch_b_shift; n=100; capture=0.80 lift=8.0,7b72007,,,,,,,,,,,,scorecard,20260910_163714_score__batch_b_shift,,,,,,,,,
+20260910_163727_scorecard__batch_c_dropout,,label=batch_c_dropout; n=100; capture=0.89 lift=8.9,7b72007,,,,,,,,,,,,scorecard,20260910_163716_score__batch_c_dropout,,,,,,,,,
+20260910_163730_scorecard__holdout_replay,,label=holdout_replay; n=231; capture=0.36 lift=3.4,7b72007,,,,,,,,,,,,scorecard,20260910_163718_score__holdout_replay,,,,,,,,,
+20260910_163734_doe-design_s060-factorial,doe-design_s060-factorial,,,,,,,,,,,,,,doe_design,20260910_163610_xgb_sel,,,,,,11.0,3.0,,
+20260910_163738_doe_s060-factorial,,,,,,,,,,,,,,,doe,20260910_163610_xgb_sel,,,,,,11.0,,1309.0,bernoulli

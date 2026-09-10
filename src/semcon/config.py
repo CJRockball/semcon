@@ -54,11 +54,22 @@ class ModelConfig(BaseModel):
     n_estimators: int = 5000
 
 
+class DOEConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    max_factors: int = 4
+    center_points: int = 3
+    replicates: int = 1
+    randomize: bool = True
+    noise_mode: str = "bernoulli"
+    gaussian_sigma: float | None = None
+
+
 class Config(BaseModel):
     model_config = ConfigDict(extra="forbid")
     model: ModelConfig = ModelConfig()
     pipeline: PipelineConfig = PipelineConfig()
     selection: SelectionConfig = SelectionConfig()
+    doe: DOEConfig = DOEConfig()
 
     def with_model_overrides(self, overrides: dict) -> "Config":
         """Return self with --set overrides applied and re-validated."""
