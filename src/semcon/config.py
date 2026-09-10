@@ -56,9 +56,8 @@ class ModelConfig(BaseModel):
 
 class DOEConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    seed: int = 1337
     max_factors: int = 4
-    center_points: int = 0
+    center_points: int = 3
     replicates: int = 1
     randomize: bool = True
     noise_mode: str = "bernoulli"
