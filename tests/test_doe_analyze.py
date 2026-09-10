@@ -7,15 +7,18 @@ import pytest
 
 from semcon.doe_analyze import (
     REQUIRED_COLUMNS,
+    bernoulli_effects_table,
     build_formula,
     check_curvature,
     effects_table,
+    fit_bernoulli_glm,
     fit_effect_model,
     infer_factors,
     load_predictions,
     main_effects_table,
     residual_diagnostics,
     select_recommendation,
+    summarize_bernoulli_cells,
     summarize_design_cells,
     write_analysis_artifacts,
 )
@@ -51,6 +54,25 @@ def _prediction_frame() -> pd.DataFrame:
             )
 
     return pd.DataFrame(rows)
+
+
+def _add_coded_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    out = frame.copy()
+    out["s060_coded"] = out["s060"].map({0.0: -1.0, 0.5: 0.0, 1.0: 1.0})
+    out["s123_coded"] = out["s123"].map({0.0: -1.0, 0.5: 0.0, 1.0: 1.0})
+    return out
+
+
+def _bernoulli_cells() -> pd.DataFrame:
+    """Grouped cells where high s060 and high s123 clearly raise failures."""
+    return pd.DataFrame(
+        {
+            "s060_coded": [-1.0, 1.0, -1.0, 1.0],
+            "s123_coded": [-1.0, -1.0, 1.0, 1.0],
+            "simulated_failures": [20, 60, 22, 62],
+            "simulated_passes": [80, 40, 78, 38],
+        }
+    )
 
 
 def test_load_predictions_rejects_missing_required_columns(tmp_path: Path) -> None:
@@ -165,6 +187,41 @@ def test_select_recommendation_minimizes_calibrated_risk() -> None:
     assert "Surrogate recommendation only" in recommendation["claim_boundary"]
 
 
+def test_summarize_bernoulli_cells_aggregates_failures_and_passes() -> None:
+    frame = _add_coded_columns(_prediction_frame())
+
+    cells = summarize_bernoulli_cells(frame, ["s060", "s123"], ["s060_coded", "s123_coded"])
+
+    assert len(cells) == frame["run_id"].nunique()
+    assert {
+        "simulated_failures",
+        "simulated_passes",
+        "n_trials",
+        "simulated_failure_rate",
+        "expected_failure_rate_from_p_cal",
+    }.issubset(cells.columns)
+    assert cells["n_trials"].eq(5).all()
+    assert (cells["simulated_failures"] + cells["simulated_passes"] == cells["n_trials"]).all()
+
+
+def test_fit_bernoulli_glm_recovers_main_effect_direction() -> None:
+    cells = _bernoulli_cells()
+
+    model = fit_bernoulli_glm(
+        cells,
+        ["s060_coded", "s123_coded"],
+        include_interactions=False,
+    )
+    effects = bernoulli_effects_table(model)
+
+    assert model.params["s060_coded"] > 0
+    assert model.params["s123_coded"] > 0
+    assert {"estimate_log_odds", "odds_ratio", "p_value", "analysis_scope"}.issubset(
+        effects.columns
+    )
+    assert effects["analysis_scope"].str.contains("simulated Bernoulli").all()
+
+
 def test_write_analysis_artifacts(tmp_path: Path) -> None:
     frame = _prediction_frame()
     summary = summarize_design_cells(frame, ["s060", "s123"])
@@ -175,6 +232,14 @@ def test_write_analysis_artifacts(tmp_path: Path) -> None:
     curvature = check_curvature(summary, ["s060", "s123"])
     recommendation = select_recommendation(summary, ["s060", "s123"])
 
+    bernoulli_cells = _bernoulli_cells()
+    bernoulli_model = fit_bernoulli_glm(
+        bernoulli_cells,
+        ["s060_coded", "s123_coded"],
+        include_interactions=False,
+    )
+    bernoulli_effects = bernoulli_effects_table(bernoulli_model)
+
     write_analysis_artifacts(
         tmp_path,
         summary,
@@ -184,6 +249,9 @@ def test_write_analysis_artifacts(tmp_path: Path) -> None:
         curvature,
         recommendation,
         model,
+        bernoulli_cells=bernoulli_cells,
+        bernoulli_effects=bernoulli_effects,
+        bernoulli_model=bernoulli_model,
     )
 
     expected = {
@@ -194,7 +262,10 @@ def test_write_analysis_artifacts(tmp_path: Path) -> None:
         "curvature.json",
         "recommendation.json",
         "model_summary.txt",
+        "bernoulli_cell_summary.csv",
+        "bernoulli_effects_table.csv",
+        "bernoulli_model_summary.txt",
+        "bernoulli_scope.json",
     }
 
     assert expected.issubset({path.name for path in tmp_path.iterdir()})
-

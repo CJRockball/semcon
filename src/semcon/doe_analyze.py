@@ -326,9 +326,7 @@ def summarize_bernoulli_cells(
     grouped["simulated_failures"] = grouped["simulated_failures"].astype(int)
     grouped["n_trials"] = grouped["n_trials"].astype(int)
     grouped["simulated_passes"] = grouped["n_trials"] - grouped["simulated_failures"]
-    grouped["simulated_failure_rate"] = (
-        grouped["simulated_failures"] / grouped["n_trials"]
-    )
+    grouped["simulated_failure_rate"] = grouped["simulated_failures"] / grouped["n_trials"]
 
     return grouped.sort_values("run_order").reset_index(drop=True)
 
@@ -344,9 +342,7 @@ def _build_glm_design_matrix(
     if include_interactions:
         for i, factor_a in enumerate(coded_factors):
             for factor_b in coded_factors[i + 1 :]:
-                X[f"{factor_a}:{factor_b}"] = (
-                    bernoulli_cells[factor_a] * bernoulli_cells[factor_b]
-                )
+                X[f"{factor_a}:{factor_b}"] = bernoulli_cells[factor_a] * bernoulli_cells[factor_b]
 
     return sm.add_constant(X, has_constant="add")
 
@@ -378,9 +374,7 @@ def fit_bernoulli_glm(
         coded_factors,
         include_interactions=include_interactions,
     )
-    y = bernoulli_cells[
-        ["simulated_failures", "simulated_passes"]
-    ].to_numpy(dtype=float)
+    y = bernoulli_cells[["simulated_failures", "simulated_passes"]].to_numpy(dtype=float)
 
     return sm.GLM(y, X, family=sm.families.Binomial()).fit()
 
@@ -400,9 +394,7 @@ def bernoulli_effects_table(model) -> pd.DataFrame:
     out["odds_ratio"] = np.exp(out["estimate_log_odds"])
     out["abs_estimate_log_odds"] = out["estimate_log_odds"].abs()
     out["is_interaction"] = out["term"].str.contains(":", regex=False)
-    out["analysis_scope"] = (
-        "simulated Bernoulli response conditioned on calibrated surrogate"
-    )
+    out["analysis_scope"] = "simulated Bernoulli response conditioned on calibrated surrogate"
 
     return out.sort_values(
         "abs_estimate_log_odds",
@@ -425,8 +417,7 @@ def bernoulli_scope() -> dict:
             "change yield."
         ),
         "physical_confirmation": (
-            "Requires randomized, blocked confirmation lots at mapped "
-            "controllable recipe settings."
+            "Requires randomized, blocked confirmation lots at mapped controllable recipe settings."
         ),
     }
 
@@ -701,8 +692,7 @@ def main(argv=None):
     logger.info("[doe_analyze] recommendation=%s", recommendation)
     if bernoulli_effects is not None:
         logger.info(
-            "[doe_analyze] grouped Bernoulli GLM is simulation-only; "
-            "see bernoulli_scope.json"
+            "[doe_analyze] grouped Bernoulli GLM is simulation-only; see bernoulli_scope.json"
         )
     logger.info("[doe_analyze] done -> %s", output_dir)
 

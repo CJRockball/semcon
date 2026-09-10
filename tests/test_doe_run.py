@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 
 from semcon import schema
 from semcon.doe_run import (
+    _apply_noise,
     append_doe_index,
     load_background_frame,
     resolve_surrogate,
@@ -52,6 +53,17 @@ def _tiny_design() -> pd.DataFrame:
             "s123": [0.1, 0.4],
         }
     )
+
+
+def _tiny_coded_design() -> pd.DataFrame:
+    design = _tiny_design()
+    design["design_row"] = [1, 2]
+    design["is_center"] = [False, False]
+    design["is_replicate"] = [False, False]
+    design["replicate"] = [1, 1]
+    design["s060_coded"] = [-1.0, 1.0]
+    design["s123_coded"] = [-1.0, 1.0]
+    return design
 
 
 def test_resolve_surrogate_and_score_design(
@@ -97,7 +109,46 @@ def test_resolve_surrogate_and_score_design(
         seed=7,
     )
 
-    surrogate = resolve_surrogate(run="latest", no_cal=False)
+    assert len(out) == len(background) * len(design)
+    assert {"run_id", "score_raw", "p_cal", "y_observed"}.issubset(out.columns)
+    assert out["run_id"].nunique() == 2
+
+
+def test_apply_noise_bernoulli_is_binary_and_seeded() -> None:
+    p = np.linspace(0.05, 0.95, 20)
+
+    first = _apply_noise(p, "bernoulli", None, seed=42)
+    second = _apply_noise(p, "bernoulli", None, seed=42)
+
+    assert set(np.unique(first)).issubset({0.0, 1.0})
+    assert np.array_equal(first, second)
+
+
+def test_score_design_preserves_coded_columns_and_bernoulli_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    background = _tiny_background()
+    design = _tiny_coded_design()
+
+    class DummyBooster:
+        def predict(self, matrix):
+            return np.full(matrix.num_row(), 0.3)
+
+    monkeypatch.setattr(
+        "semcon.doe_run.build_features",
+        lambda frame: (frame, []),
+    )
+
+    surrogate = (
+        Path("train"),
+        None,
+        "train",
+        None,
+        ["s060", "s123"],
+        DummyBooster(),
+        None,
+        None,
+    )
 
     out = score_design(
         background,
@@ -108,9 +159,13 @@ def test_resolve_surrogate_and_score_design(
         seed=7,
     )
 
-    assert len(out) == len(background) * len(design)
-    assert {"run_id", "score_raw", "p_cal", "y_observed"}.issubset(out.columns)
-    assert out["run_id"].nunique() == 2
+    assert {"s060_coded", "s123_coded", "design_row", "is_center", "replicate"}.issubset(
+        out.columns
+    )
+    assert out.groupby("run_id")["s060_coded"].nunique().eq(1).all()
+    assert set(out["y_observed"].unique()).issubset({0.0, 1.0})
+    # Bernoulli noise must not perturb the deterministic surrogate response.
+    assert out["p_cal"].eq(0.3).all()
 
 
 def test_score_design_ood_flags_expected_structure() -> None:

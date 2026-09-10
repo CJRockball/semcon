@@ -2,8 +2,10 @@
 #
 #   make            full pipeline: ingest -> extract -> explore -> features
 #                   -> train (base + sel) -> calibrate -> spc -> sarimax
-# make demo serving demo: 
-#					simulate 3 lots -> score -> reconciled holdout replay
+#   make demo       serving demo: simulate 3 lots -> score -> reconciled
+#                   holdout replay -> scorecards
+#   make doe        surrogate DOE: design -> run -> analyze
+#                   (primary p_cal OLS + secondary grouped Bernoulli GLM)
 #   make train      both training runs only
 #   make <stage>    single stage: ingest, extract, explore, features,
 #                   train-base, train-sel, calibrate, spc, sarimax
@@ -32,15 +34,17 @@ DOE_DESIGN := $(UV) semcon-doe-design
 DOE_RUN := $(UV) semcon-doe-run
 DOE_ANALYZE := $(UV) semcon-doe-analyze
 
-# DOE demonstration configuration.
-# The modules create timestamped run folders and update these one-line pointer
-# files only after each stage has completed successfully.
-DOE_ROOT := artifacts/doe
+# Variables
 DOE_LABEL := s060-factorial
-DOE_DESIGN_LATEST := $(DOE_ROOT)/latest_design
-DOE_RUN_LATEST := $(DOE_ROOT)/latest_run
-DOE_BACKGROUND_START := 2008-07-19 00:00:00
-DOE_BACKGROUND_END := 2008-10-05 05:29:59
+DOE_N_FACTORS := 3
+DOE_CENTER_POINTS := 3
+# Pointer files written by doe_design.py / doe_run.py
+DOE_DESIGN_POINTER := artifacts/doe/latest_design
+DOE_RUN_POINTER := artifacts/doe/latest_run
+# Background window mirrors the SECOM train/calibration zone used for the
+# first DOE pass; change here if the scoring background changes.
+DOE_BG_START := 2008-07-19 00:00:00
+DOE_BG_END := 2008-10-05 05:29:59
 
 # Run-name slugs, matching the post-migration defaults in train_xgb.
 # Selection strength (gamma) comes from semcon config, not the CLI - if
@@ -48,9 +52,8 @@ DOE_BACKGROUND_END := 2008-10-05 05:29:59
 BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
-.PHONY: all ingest extract validate explore features train train-base train-sel \
-        calibrate spc sarimax test hygiene clean demo \
-        doe-design doe-run doe-analyze doe
+.PHONY: all ingest extract explore features train train-base train-sel \
+        calibrate spc sarimax doe test hygiene clean demo
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -116,34 +119,22 @@ demo: calibrate
 	$(SCORECARD) --score-run latest --label batch_c_dropout --reference-label batch_a_clean
 	$(SCORECARD) --score-run latest --label holdout_replay
 
-doe-design: calibrate
-	@echo "==> DOE design: selected raw sensors -> pyDOE3 factorial matrix"
-	$(DOE_DESIGN) \
-		--run latest \
-		--label $(DOE_LABEL) \
-		--n-factors 3
-	@test -s $(DOE_DESIGN_LATEST) || { echo "FAIL: DOE design did not write $(DOE_DESIGN_LATEST)"; exit 1; }
-	@echo "==> DOE design pointer: $$(cat $(DOE_DESIGN_LATEST))"
-
-doe-run: doe-design
-	@echo "==> DOE run: calibrated surrogate + background averaging + OOD"
-	$(DOE_RUN) \
-		--design "$$(cat $(DOE_DESIGN_LATEST))/design.csv" \
-		--background-start "$(DOE_BACKGROUND_START)" \
-		--background-end "$(DOE_BACKGROUND_END)" \
+# Surrogate DOE chain. Design/run/analyze stages stay separate on disk; this
+# target just wires them through the latest_design / latest_run pointers.
+# Primary response is deterministic p_cal; the grouped Bernoulli GLM is a
+# simulation-only secondary analysis (see bernoulli_scope.json in the output).
+doe: calibrate
+	@echo "==> doe design ($(DOE_N_FACTORS) factors, $(DOE_CENTER_POINTS) center points)"
+	$(DOE_DESIGN) --run latest --label $(DOE_LABEL) \
+		--n-factors $(DOE_N_FACTORS) --center-points $(DOE_CENTER_POINTS)
+	@echo "==> doe run over background $(DOE_BG_START) .. $(DOE_BG_END)"
+	$(DOE_RUN) --design "$$(cat $(DOE_DESIGN_POINTER))/design.csv" \
+		--background-start "$(DOE_BG_START)" --background-end "$(DOE_BG_END)" \
 		--label $(DOE_LABEL)
-	@test -s $(DOE_RUN_LATEST) || { echo "FAIL: DOE run did not write $(DOE_RUN_LATEST)"; exit 1; }
-	@echo "==> DOE run pointer: $$(cat $(DOE_RUN_LATEST))"
-
-doe-analyze: doe-run
-	@echo "==> DOE analysis: effects, interactions, diagnostics, recommendation"
-	$(DOE_ANALYZE) \
-		--predictions "$$(cat $(DOE_RUN_LATEST))/design_predictions.parquet" \
-		--output-dir "$$(cat $(DOE_RUN_LATEST))/analysis"
-	@echo "==> DOE analysis complete: $$(cat $(DOE_RUN_LATEST))/analysis"
-
-doe: doe-analyze
-	@echo "==> DOE pipeline complete"
+	@echo "==> doe analyze (surrogate OLS + grouped Bernoulli GLM)"
+	$(DOE_ANALYZE) --predictions "$$(cat $(DOE_RUN_POINTER))/design_predictions.parquet" \
+		--output-dir "$$(cat $(DOE_RUN_POINTER))/analysis"
+	@echo "==> doe complete - analysis in $$(cat $(DOE_RUN_POINTER))/analysis"
 
 test:
 	$(UV) pytest -q

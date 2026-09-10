@@ -1,0 +1,30 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             p_cal_mean   R-squared:                       0.993
+Model:                            OLS   Adj. R-squared:                  0.983
+Method:                 Least Squares   F-statistic:                     97.62
+Date:                Thu, 10 Sep 2026   Prob (F-statistic):           0.000274
+Time:                        14:57:10   Log-Likelihood:                 59.081
+No. Observations:                  11   AIC:                            -104.2
+Df Residuals:                       4   BIC:                            -101.4
+Df Model:                           6                                         
+Covariance Type:            nonrobust                                         
+=========================================================================================
+                            coef    std err          t      P>|t|      [0.025      0.975]
+-----------------------------------------------------------------------------------------
+Intercept                 0.0461      0.001     81.886      0.000       0.044       0.048
+s060_coded                0.0126      0.001     19.055      0.000       0.011       0.014
+s022_coded                0.0067      0.001     10.102      0.001       0.005       0.008
+s461_coded                0.0058      0.001      8.784      0.001       0.004       0.008
+s060_coded:s022_coded     0.0031      0.001      4.745      0.009       0.001       0.005
+s060_coded:s461_coded     0.0026      0.001      3.939      0.017       0.001       0.004
+s022_coded:s461_coded     0.0015      0.001      2.316      0.082      -0.000       0.003
+==============================================================================
+Omnibus:                        2.010   Durbin-Watson:                   1.099
+Prob(Omnibus):                  0.366   Jarque-Bera (JB):                1.003
+Skew:                           0.350   Prob(JB):                        0.606
+Kurtosis:                       1.697   Cond. No.                         1.17
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.

@@ -59,8 +59,7 @@ def _design_factor_columns(design: pd.DataFrame) -> list[str]:
         c
         for c in design.columns
         if not c.endswith("_coded")
-        and c
-        not in {"run_id", "design_row", "is_center", "is_replicate", "replicate", "run_order"}
+        and c not in {"run_id", "design_row", "is_center", "is_replicate", "replicate", "run_order"}
     ]
 
 
@@ -197,9 +196,7 @@ def score_design(
     coded_cols = [col for col in expanded.columns if col.endswith("_coded")]
     factor_cols = factors
 
-    keep_cols = [
-        col for col in metadata_cols + coded_cols + factor_cols if col in expanded.columns
-    ]
+    keep_cols = [col for col in metadata_cols + coded_cols + factor_cols if col in expanded.columns]
 
     out = expanded[keep_cols].copy()
     out["score_raw"] = raw
@@ -356,7 +353,9 @@ def main(argv=None):
 
     cfg = load_config()
     noise_mode = args.noise_mode or cfg.doe.noise_mode
-    gaussian_sigma = args.gaussian_sigma if args.gaussian_sigma is not None else cfg.doe.gaussian_sigma
+    gaussian_sigma = (
+        args.gaussian_sigma if args.gaussian_sigma is not None else cfg.doe.gaussian_sigma
+    )
     seed = args.seed if args.seed is not None else cfg.pipeline.seed
 
     design = pd.read_csv(args.design)

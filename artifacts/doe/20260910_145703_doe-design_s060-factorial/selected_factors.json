@@ -1,0 +1,30 @@
+{
+  "parent_run": "20260910_145542_xgb_sel",
+  "selected_factors": [
+    {
+      "name": "s060",
+      "low": -4.150180000000001,
+      "center": 1.1741,
+      "high": 18.879069730689327,
+      "units": "SECOM sensor units; physical units unavailable",
+      "rationale": "Selected raw sensor feature. mean_abs_shap=0.803315; levels are observed Q10/Q50/Q90."
+    },
+    {
+      "name": "s022",
+      "low": -6416.313489484811,
+      "center": -5525.25,
+      "high": -5194.993215089388,
+      "units": "SECOM sensor units; physical units unavailable",
+      "rationale": "Selected raw sensor feature. mean_abs_shap=0.43461; levels are observed Q10/Q50/Q90."
+    },
+    {
+      "name": "s461",
+      "low": 15.2752,
+      "center": 26.1518,
+      "high": 46.1914,
+      "units": "SECOM sensor units; physical units unavailable",
+      "rationale": "Selected raw sensor feature. mean_abs_shap=0.393434; levels are observed Q10/Q50/Q90."
+    }
+  ],
+  "excluded_feature_policy": "Engineered missingness and clique indicators are excluded from DOE factors because they are measurement/data-quality signals, not controllable process settings."
+}
