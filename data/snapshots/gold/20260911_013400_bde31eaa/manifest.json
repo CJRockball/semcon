@@ -1,0 +1,23 @@
+{
+  "snapshot_id": "20260911_013400_bde31eaa",
+  "layer": "gold",
+  "created": "2026-09-11T01:34:00.525565+00:00",
+  "rows": 1867,
+  "cols": 598,
+  "git_sha": "42618af91431a433eb77eb1a7008c9891ab5ef25",
+  "config": {
+    "holdout_n": 231,
+    "tail_n": 27,
+    "limits": "robust",
+    "k": 3.0,
+    "ewma_lam": 0.2,
+    "window": 50
+  },
+  "fingerprint": {
+    "raw": {
+      "sim:batch_c_dropout": "b86b172756f01bb3bf0862df1d9602e4cf84b61fe46b493cd6893ce3dc7483c1"
+    },
+    "extract_sql_sha256": "b80c407b2bc23e36d2b752314b9443003bb199a9a41660f7073f150a7e8d528e"
+  },
+  "parquet_sha256": "bde31eaaa6504bfcb62062f8f64538e70a04393ef88c4fbf304d2906de465979"
+}

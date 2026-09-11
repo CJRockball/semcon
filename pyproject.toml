@@ -49,6 +49,9 @@ dependencies = [
     "jupyterlab>=4.0",
     "ipykernel>=6.27",
     "pydoe3>=1.6.2",
+    "dash>=3.4,<4",
+    "plotly>=6,<7",
+    "dash-ag-grid>=33",
 ]
 
 # Dependency groups = DEVELOPER-only tooling, never published (PEP 735).

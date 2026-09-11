@@ -24,6 +24,7 @@ Pipeline: screening pass over all sensor columns -> spc_screening.csv
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -694,7 +695,8 @@ def main(argv=None):
             "median_ooc_p1": round(float(screen["ooc_p1"].median()), 4),
             "max_delta": round(float(screen["delta"].max()), 4),
             "n_drift": int((screen["delta"] >= args.delta_min).sum()),
-            "data": fp["raw"]["secom.data"][:16],  # values-matrix hash, 16-char
+            "data": hashlib.sha256(json.dumps(fp["raw"], sort_keys=True).encode()
+                    ).hexdigest()[:16],  # hash of all raw table hashes, 16-char
             "snapshot_id": snapshot_id,
         },
         index_file=ARTIFACTS / "index_monitor.csv",
