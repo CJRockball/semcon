@@ -164,7 +164,7 @@ def test_imr_rejects_missing_series(
 ) -> None:
     with pytest.raises(ValueError, match="no IMR series"):
         dash_figs.make_imr_fig(imr, limits, "s001")
-        
+
 
 def test_drift_overview_excludes_degenerate_rows(screening: pd.DataFrame) -> None:
     fig = dash_figs.make_drift_overview_fig(screening)
