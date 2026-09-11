@@ -450,7 +450,8 @@ def plot_imr(
     lam: float,
     note: str,
     out_png: Path,
-) -> None:
+) -> pd.DataFrame:
+    """I-MR + EWMA triptych for one showcase feature; returns the series."""
     x = df[col]
     t = np.arange(len(df))
     xv = x.to_numpy(dtype=float)
@@ -498,8 +499,28 @@ def plot_imr(
     fig.savefig(out_png, dpi=180)
     plt.close(fig)
 
+    return pd.DataFrame(
+        {
+            "feature": col,
+            "t": t,
+            "value": xv,
+            "mr": mr,
+            "ewma": z.to_numpy(),
+            "ewma_lcl": e_lcl,
+            "ewma_ucl": e_ucl,
+            "r1": wr["r1"].to_numpy(),
+            "r2": wr["r2"].to_numpy(),
+            "r3": wr["r3"].to_numpy(),
+            "r4": wr["r4"].to_numpy(),
+        }
+    )
 
-def plot_protocol(df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_dir: Path) -> None:
+
+
+def plot_protocol(
+    df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_dir: Path
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Protocol-layer charts; returns (row-missing I-chart series, windowed rates)."""
     # (a) per-wafer missingness across the raw 590: the NaN-explosion exhibit.
     # The values layer looks calm at the tail; this protocol layer should scream.
     col = "f_row_missing_rate"
@@ -523,13 +544,24 @@ def plot_protocol(df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_d
     fig.tight_layout()
     fig.savefig(out_dir / "protocol_row_missing_rate.png", dpi=180)
     plt.close(fig)
+    ichart = pd.DataFrame(
+        {
+            "feature": col,
+            "t": t,
+            "value": x.to_numpy(dtype=float),
+            "center": float(lim["center"]),
+            "ucl": float(lim["ucl"]),
+        }
+    )
 
     # (b) windowed rates of the three missingness indicators, binomial limits
+    rates_frames = []
     fig, axes = plt.subplots(3, 1, figsize=(11, 8), sharex=True)
     for ax, c in zip(axes, RATE_FEATURES, strict=True):
         w = windowed_rate(df[c], window)
         p0 = float(df[c].iloc[:i_hold].mean())
         lcl, ucl = binomial_limits(p0, w["n"].to_numpy())
+        rates_frames.append(w.assign(feature=c, lcl=lcl, ucl=ucl, p0=p0))
         ax.plot(w["x"], w["rate"], ".-", ms=4, lw=0.8)
         ax.plot(w["x"], ucl, "r--", lw=1)
         ax.plot(w["x"], lcl, "r--", lw=1)
@@ -550,9 +582,13 @@ def plot_protocol(df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_d
     fig.tight_layout()
     fig.savefig(out_dir / "protocol_missing_indicators.png", dpi=180)
     plt.close(fig)
+    return ichart, pd.concat(rates_frames, ignore_index=True)
 
 
-def plot_pchart(df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_png: Path) -> None:
+def plot_pchart(
+    df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_png: Path
+) -> pd.DataFrame:
+    """Yield p-chart; returns the windowed frame behind the figure."""
     w = windowed_rate(df["target"], window)
     p0 = float(df["target"].iloc[:i_hold].mean())
     lcl, ucl = binomial_limits(p0, w["n"].to_numpy())
@@ -581,6 +617,7 @@ def plot_pchart(df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_png
     fig.tight_layout()
     fig.savefig(out_png, dpi=180)
     plt.close(fig)
+    return w.assign(lcl=lcl, ucl=ucl, p0=p0)
 
 
 # ---------------------------------------------------------------- run registry seam
@@ -671,20 +708,35 @@ def main(argv=None):
 
     plot_overview(screen, stable, figs / "overview_scatter.png")
     notes = load_master_notes(args.master_path)
+    imr_frames = []
     for col in picks:
-        plot_imr(
-            df,
-            col,
-            limits.loc[col],
-            i_hold,
-            i_tail,
-            lam=args.ewma_lam,
-            note=notes.get(col, ""),
-            out_png=figs / f"imr_{col}.png",
+        imr_frames.append(
+            plot_imr(
+                df,
+                col,
+                limits.loc[col],
+                i_hold,
+                i_tail,
+                lam=args.ewma_lam,
+                note=notes.get(col, ""),
+                out_png=figs / f"imr_{col}.png",
+            )
         )
-    plot_protocol(df, i_hold, i_tail, args.window, figs)
-    plot_pchart(df, i_hold, i_tail, args.window, figs / "yield_pchart.png")
+    ichart, protocol_rates = plot_protocol(df, i_hold, i_tail, args.window, figs)
+    pchart = plot_pchart(df, i_hold, i_tail, args.window, figs / "yield_pchart.png")
 
+    # Persist the series behind every figure: the dashboard is a pure
+    # consumer and needs the numbers, not the pixels.
+    pd.concat(imr_frames, ignore_index=True).to_csv(
+        run / "imr_series.csv", index=False, float_format="%.6g"
+    )
+    ichart.to_csv(run / "protocol_row_missing.csv", index=False, float_format="%.6g")
+    protocol_rates.to_csv(run / "protocol_rates.csv", index=False, float_format="%.6g")
+    pchart.to_csv(run / "pchart_data.csv", index=False, float_format="%.6g")
+    logger.info(
+        "chart series persisted: imr_series / protocol_row_missing / "
+        "protocol_rates / pchart_data"
+    )
     tracking.append_index(
         run,
         {
