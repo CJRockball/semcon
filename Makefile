@@ -30,10 +30,12 @@ SARIMAX  := $(UV) semcon-sarimax
 SIMULATE := $(UV) semcon-simulate
 SCORE    := $(UV) semcon-score
 SCORECARD := $(UV) semcon-scorecard
+MONITOR := $(UV) semcon-monitor
 DOE_DESIGN := $(UV) semcon-doe-design
 DOE_RUN := $(UV) semcon-doe-run
 DOE_ANALYZE := $(UV) semcon-doe-analyze
 DASH      := $(UV) semcon-dash
+
 
 # Variables
 DOE_LABEL := s060-factorial
@@ -54,7 +56,7 @@ BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
 .PHONY: all ingest extract explore features train train-base train-sel \
-        calibrate spc sarimax doe test hygiene clean demo dash
+        calibrate spc sarimax doe test hygiene clean demo dash monitor
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -123,6 +125,9 @@ demo: calibrate
 	$(SCORECARD) --score-run latest --label batch_b_shift --reference-label batch_a_clean
 	$(SCORECARD) --score-run latest --label batch_c_dropout --reference-label batch_a_clean
 	$(SCORECARD) --score-run latest --label holdout_replay
+	@echo "==> monitoring evaluation"
+	$(MONITOR)
+
 
 # Surrogate DOE chain. Design/run/analyze stages stay separate on disk; this
 # target just wires them through the latest_design / latest_run pointers.
@@ -162,6 +167,7 @@ clean:
 	rm -rf artifacts/eda_*
 	rm -f logs/*
 	rm -rf artifacts/scores
+	rm -rf artifacts/monitoring
 	rm -rf data/sim
 	rm -rf artifacts/doe
 	find src tests -type d -name "__pycache__" -prune -exec rm -rf {} +
