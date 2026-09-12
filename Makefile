@@ -33,6 +33,7 @@ SCORECARD := $(UV) semcon-scorecard
 DOE_DESIGN := $(UV) semcon-doe-design
 DOE_RUN := $(UV) semcon-doe-run
 DOE_ANALYZE := $(UV) semcon-doe-analyze
+DASH      := $(UV) semcon-dash
 
 # Variables
 DOE_LABEL := s060-factorial
@@ -53,7 +54,7 @@ BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
 .PHONY: all ingest extract explore features train train-base train-sel \
-        calibrate spc sarimax doe test hygiene clean demo
+        calibrate spc sarimax doe test hygiene clean demo dash
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -102,6 +103,10 @@ spc: train-sel
 sarimax: extract
 	@echo "==> sarimax experiments"
 	$(SARIMAX)
+
+dash:
+	@echo "==> launch monitoring dashboard"
+	$(DASH)
 
 # Batch windows mirror simulate_lots.py defaults (seed 7, start 2026-01-05);
 # the holdout window mirrors the SECOM snapshot zone boundaries. Change together.
