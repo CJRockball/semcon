@@ -1,0 +1,23 @@
+                               SARIMAX Results                                
+==============================================================================
+Dep. Variable:                 target   No. Observations:                   33
+Model:                 ARIMA(0, 1, 1)   Log Likelihood                  47.823
+Date:                Sat, 12 Sep 2026   AIC                            -91.645
+Time:                        12:12:04   BIC                            -88.714
+Sample:                             0   HQIC                           -90.674
+                                 - 33                                         
+Covariance Type:                  opg                                         
+==============================================================================
+                 coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+ma.L1         -0.6492      0.184     -3.537      0.000      -1.009      -0.289
+sigma2         0.0029      0.001      3.958      0.000       0.001       0.004
+===================================================================================
+Ljung-Box (L1) (Q):                   0.10   Jarque-Bera (JB):                 2.77
+Prob(Q):                              0.76   Prob(JB):                         0.25
+Heteroskedasticity (H):               0.89   Skew:                             0.67
+Prob(H) (two-sided):                  0.85   Kurtosis:                         3.50
+===================================================================================
+
+Warnings:
+[1] Covariance matrix calculated using the outer product of gradients (complex-step).
