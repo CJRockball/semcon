@@ -88,6 +88,7 @@ semcon-doe-run = "semcon.doe_run:main"
 semcon-doe-analyze = "semcon.doe_analyze:main"
 semcon-spc = "semcon.spc:main"
 semcon-sarimax = "semcon.sarimax:main"
+semcon-dash = "semcon.dash_app:main"
 
 [tool.ruff]
 target-version = "py311"
