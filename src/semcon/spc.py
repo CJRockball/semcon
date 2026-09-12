@@ -516,7 +516,6 @@ def plot_imr(
     )
 
 
-
 def plot_protocol(
     df: pd.DataFrame, i_hold: int, i_tail: int, window: int, out_dir: Path
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -734,8 +733,7 @@ def main(argv=None):
     protocol_rates.to_csv(run / "protocol_rates.csv", index=False, float_format="%.6g")
     pchart.to_csv(run / "pchart_data.csv", index=False, float_format="%.6g")
     logger.info(
-        "chart series persisted: imr_series / protocol_row_missing / "
-        "protocol_rates / pchart_data"
+        "chart series persisted: imr_series / protocol_row_missing / protocol_rates / pchart_data"
     )
     tracking.append_index(
         run,
@@ -747,8 +745,9 @@ def main(argv=None):
             "median_ooc_p1": round(float(screen["ooc_p1"].median()), 4),
             "max_delta": round(float(screen["delta"].max()), 4),
             "n_drift": int((screen["delta"] >= args.delta_min).sum()),
-            "data": hashlib.sha256(json.dumps(fp["raw"], sort_keys=True).encode()
-                    ).hexdigest()[:16],  # hash of all raw table hashes, 16-char
+            "data": hashlib.sha256(json.dumps(fp["raw"], sort_keys=True).encode()).hexdigest()[
+                :16
+            ],  # hash of all raw table hashes, 16-char
             "snapshot_id": snapshot_id,
         },
         index_file=ARTIFACTS / "index_monitor.csv",

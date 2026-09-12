@@ -144,7 +144,14 @@ def test_row_missing_marks_beyond_ucl(row_missing: pd.DataFrame) -> None:
 def test_imr_returns_three_panel_figure(imr: pd.DataFrame, limits: pd.DataFrame) -> None:
     fig = dash_figs.make_imr_fig(imr, limits, "s003", i_hold=1, i_tail=2)
     assert isinstance(fig, Figure)
-    assert {trace.name for trace in fig.data} >= {"Value", "MR", "EWMA", "EWMA UCL", "EWMA LCL", "WE alarm"}
+    assert {trace.name for trace in fig.data} >= {
+        "Value",
+        "MR",
+        "EWMA",
+        "EWMA UCL",
+        "EWMA LCL",
+        "WE alarm",
+    }
     assert len(fig.layout.annotations) >= 3  # subplot titles
 
 
@@ -178,7 +185,10 @@ def test_drift_overview_excludes_degenerate_rows(screening: pd.DataFrame) -> Non
 def test_queue_orders_by_rank_and_limits_display(queue: pd.DataFrame) -> None:
     fig = dash_figs.make_queue_fig(queue, top_k=2)
     assert isinstance(fig, Figure)
-    assert list(fig.data[0].y) == ["1003", "1002"]  # rank 2 then 1: rank 1 at top of horizontal plot
+    assert list(fig.data[0].y) == [
+        "1003",
+        "1002",
+    ]  # rank 2 then 1: rank 1 at top of horizontal plot
     assert "top 2 wafers" in fig.layout.title.text
 
 

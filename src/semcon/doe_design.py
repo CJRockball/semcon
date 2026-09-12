@@ -513,9 +513,7 @@ def main(argv=None):
 
     latest_pointer = ARTIFACTS / "doe" / "latest_design"
     latest_pointer.parent.mkdir(parents=True, exist_ok=True)
-    latest_pointer.write_text(
-        f"{run_dir.relative_to(ARTIFACTS.parent)}\n", encoding="utf-8"
-    )
+    latest_pointer.write_text(f"{run_dir.relative_to(ARTIFACTS.parent)}\n", encoding="utf-8")
     logger.info("[doe_design] parent=%s", train_id)
     logger.info("[doe_design] selected factors=%s", [f["name"] for f in factors])
     logger.info("[doe_design] wrote design -> %s", design_csv)

@@ -104,15 +104,22 @@ def make_pchart_fig(
     )
     fig.add_trace(
         go.Scatter(
-            x=df["x"], y=df["ucl"], mode="lines", name="UCL",
+            x=df["x"],
+            y=df["ucl"],
+            mode="lines",
+            name="UCL",
             line={"color": COLORS["limit"], "dash": "dash"},
         )
     )
     fig.add_trace(
         go.Scatter(
-            x=df["x"], y=df["lcl"], mode="lines", name="LCL",
+            x=df["x"],
+            y=df["lcl"],
+            mode="lines",
+            name="LCL",
             line={"color": COLORS["limit"], "dash": "dash"},
-            fill="tonexty", fillcolor="rgba(214, 39, 40, 0.04)",
+            fill="tonexty",
+            fillcolor="rgba(214, 39, 40, 0.04)",
         )
     )
     fig.add_hline(
@@ -126,9 +133,16 @@ def make_pchart_fig(
     if alarms.any():
         fig.add_trace(
             go.Scatter(
-                x=df.loc[alarms, "x"], y=df.loc[alarms, "rate"],
-                mode="markers", name="Beyond UCL",
-                marker={"size": 11, "symbol": "circle-open", "color": COLORS["risk"], "line": {"width": 2}},
+                x=df.loc[alarms, "x"],
+                y=df.loc[alarms, "rate"],
+                mode="markers",
+                name="Beyond UCL",
+                marker={
+                    "size": 11,
+                    "symbol": "circle-open",
+                    "color": COLORS["risk"],
+                    "line": {"width": 2},
+                },
             )
         )
     _phase_marks(fig, i_hold, i_tail)
@@ -165,7 +179,10 @@ def make_protocol_rates_fig(
         for name, group in df.groupby("feature", sort=True):
             fig.add_trace(
                 go.Scatter(
-                    x=group["x"], y=group["rate"], mode="lines+markers", name=name,
+                    x=group["x"],
+                    y=group["rate"],
+                    mode="lines+markers",
+                    name=name,
                     customdata=np.column_stack([group["n"]]),
                     hovertemplate="%{fullData.name}<br>wafer index %{x}<br>rate %{y:.2%}<br>window n=%{customdata[0]}<extra></extra>",
                 )
@@ -174,8 +191,12 @@ def make_protocol_rates_fig(
     else:
         fig.add_trace(
             go.Scatter(
-                x=df["x"], y=df["rate"], mode="lines+markers", name=feature,
-                line={"color": COLORS["process"], "width": 2}, marker={"size": 7},
+                x=df["x"],
+                y=df["rate"],
+                mode="lines+markers",
+                name=feature,
+                line={"color": COLORS["process"], "width": 2},
+                marker={"size": 7},
             )
         )
         for column, name, dash, color in [
@@ -183,18 +204,35 @@ def make_protocol_rates_fig(
             ("lcl", "LCL", "dash", COLORS["limit"]),
         ]:
             fig.add_trace(
-                go.Scatter(x=df["x"], y=df[column], mode="lines", name=name, line={"color": color, "dash": dash})
+                go.Scatter(
+                    x=df["x"],
+                    y=df[column],
+                    mode="lines",
+                    name=name,
+                    line={"color": color, "dash": dash},
+                )
             )
         fig.add_hline(
-            y=float(df["p0"].iloc[0]), line_color=COLORS["center"], line_width=1.5,
-            annotation_text=f"Phase-I rate = {float(df['p0'].iloc[0]):.2%}", annotation_position="top left",
+            y=float(df["p0"].iloc[0]),
+            line_color=COLORS["center"],
+            line_width=1.5,
+            annotation_text=f"Phase-I rate = {float(df['p0'].iloc[0]):.2%}",
+            annotation_position="top left",
         )
         alarms = df["rate"] > df["ucl"]
         if alarms.any():
             fig.add_trace(
                 go.Scatter(
-                    x=df.loc[alarms, "x"], y=df.loc[alarms, "rate"], mode="markers", name="Beyond UCL",
-                    marker={"size": 11, "symbol": "circle-open", "color": COLORS["risk"], "line": {"width": 2}},
+                    x=df.loc[alarms, "x"],
+                    y=df.loc[alarms, "rate"],
+                    mode="markers",
+                    name="Beyond UCL",
+                    marker={
+                        "size": 11,
+                        "symbol": "circle-open",
+                        "color": COLORS["risk"],
+                        "line": {"width": 2},
+                    },
                 )
             )
         title = f"Protocol rate: {feature}"
@@ -220,25 +258,43 @@ def make_row_missing_fig(
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=df["t"], y=df["value"], mode="markers", name=feature,
+            x=df["t"],
+            y=df["value"],
+            mode="markers",
+            name=feature,
             marker={"size": 6, "color": COLORS["process"]},
             hovertemplate="wafer %{x}<br>row missingness %{y:.2%}<extra></extra>",
         )
     )
     fig.add_hline(
-        y=float(df["center"].iloc[0]), line_color=COLORS["center"], line_width=1.5,
-        annotation_text="Phase-I center", annotation_position="top left",
+        y=float(df["center"].iloc[0]),
+        line_color=COLORS["center"],
+        line_width=1.5,
+        annotation_text="Phase-I center",
+        annotation_position="top left",
     )
     fig.add_hline(
-        y=float(df["ucl"].iloc[0]), line_color=COLORS["limit"], line_dash="dash", line_width=1.5,
-        annotation_text="UCL", annotation_position="top left",
+        y=float(df["ucl"].iloc[0]),
+        line_color=COLORS["limit"],
+        line_dash="dash",
+        line_width=1.5,
+        annotation_text="UCL",
+        annotation_position="top left",
     )
     alarms = df["value"] > df["ucl"]
     if alarms.any():
         fig.add_trace(
             go.Scatter(
-                x=df.loc[alarms, "t"], y=df.loc[alarms, "value"], mode="markers", name="Beyond UCL",
-                marker={"size": 10, "symbol": "circle-open", "color": COLORS["risk"], "line": {"width": 2}},
+                x=df.loc[alarms, "t"],
+                y=df.loc[alarms, "value"],
+                mode="markers",
+                name="Beyond UCL",
+                marker={
+                    "size": 10,
+                    "symbol": "circle-open",
+                    "color": COLORS["risk"],
+                    "line": {"width": 2},
+                },
             )
         )
     _phase_marks(fig, i_hold, i_tail)
@@ -256,7 +312,19 @@ def make_imr_fig(
     i_tail: int | None = None,
 ) -> go.Figure:
     """Three-row I / MR / EWMA chart for one persisted showcase feature."""
-    required = {"feature", "t", "value", "mr", "ewma", "ewma_lcl", "ewma_ucl", "r1", "r2", "r3", "r4"}
+    required = {
+        "feature",
+        "t",
+        "value",
+        "mr",
+        "ewma",
+        "ewma_lcl",
+        "ewma_ucl",
+        "r1",
+        "r2",
+        "r3",
+        "r4",
+    }
     missing = required - set(imr.columns)
     if missing:
         raise ValueError(f"IMR series missing columns: {sorted(missing)}")
@@ -270,13 +338,23 @@ def make_imr_fig(
         raise ValueError(f"'{feature}' has degenerate Phase-I limits")
 
     fig = make_subplots(
-        rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.07,
+        rows=3,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.07,
         subplot_titles=(f"I-chart | {feature}", "Moving range", "EWMA"),
         row_heights=[0.48, 0.25, 0.27],
     )
     fig.add_trace(
-        go.Scatter(x=df["t"], y=df["value"], mode="markers", name="Value", marker={"size": 5, "color": COLORS["process"]}),
-        row=1, col=1,
+        go.Scatter(
+            x=df["t"],
+            y=df["value"],
+            mode="markers",
+            name="Value",
+            marker={"size": 5, "color": COLORS["process"]},
+        ),
+        row=1,
+        col=1,
     )
     for value, _name, color, dash in [
         (float(lim["ucl"]), "UCL", COLORS["limit"], "dash"),
@@ -288,28 +366,62 @@ def make_imr_fig(
     if we_alarm.any():
         fig.add_trace(
             go.Scatter(
-                x=df.loc[we_alarm, "t"], y=df.loc[we_alarm, "value"], mode="markers", name="WE alarm",
-                marker={"size": 10, "symbol": "circle-open", "color": COLORS["alert"], "line": {"width": 2}},
+                x=df.loc[we_alarm, "t"],
+                y=df.loc[we_alarm, "value"],
+                mode="markers",
+                name="WE alarm",
+                marker={
+                    "size": 10,
+                    "symbol": "circle-open",
+                    "color": COLORS["alert"],
+                    "line": {"width": 2},
+                },
             ),
-            row=1, col=1,
+            row=1,
+            col=1,
         )
     fig.add_trace(
-        go.Scatter(x=df["t"], y=df["mr"], mode="markers", name="MR", marker={"size": 5, "color": COLORS["mr"]}),
-        row=2, col=1,
+        go.Scatter(
+            x=df["t"],
+            y=df["mr"],
+            mode="markers",
+            name="MR",
+            marker={"size": 5, "color": COLORS["mr"]},
+        ),
+        row=2,
+        col=1,
     )
-    fig.add_hline(y=float(lim["mr_ucl"]), line_color=COLORS["limit"], line_dash="dash", line_width=1, row=2, col=1)
+    fig.add_hline(
+        y=float(lim["mr_ucl"]),
+        line_color=COLORS["limit"],
+        line_dash="dash",
+        line_width=1,
+        row=2,
+        col=1,
+    )
     fig.add_hline(y=float(lim["mr_bar"]), line_color=COLORS["center"], line_width=1, row=2, col=1)
     fig.add_trace(
-        go.Scatter(x=df["t"], y=df["ewma"], mode="lines", name="EWMA", line={"color": COLORS["ewma"], "width": 2}),
-        row=3, col=1,
+        go.Scatter(
+            x=df["t"],
+            y=df["ewma"],
+            mode="lines",
+            name="EWMA",
+            line={"color": COLORS["ewma"], "width": 2},
+        ),
+        row=3,
+        col=1,
     )
     for column, name, dash in [("ewma_ucl", "EWMA UCL", "dot"), ("ewma_lcl", "EWMA LCL", "dot")]:
         fig.add_trace(
             go.Scatter(
-                x=df["t"], y=df[column], mode="lines", name=name,
+                x=df["t"],
+                y=df[column],
+                mode="lines",
+                name=name,
                 line={"color": COLORS["limit"], "dash": dash, "width": 1},
             ),
-            row=3, col=1,
+            row=3,
+            col=1,
         )
     _phase_marks(fig, i_hold, i_tail)
     _layout(fig, f"SPC showcase: {feature}", height=760)
@@ -326,24 +438,45 @@ def make_drift_overview_fig(screening: pd.DataFrame) -> go.Figure:
     missing = required - set(screening.columns)
     if missing:
         raise ValueError(f"screening missing columns: {sorted(missing)}")
-    df = screening[~screening["degenerate"] & screening["ooc_p1"].notna() & screening["ooc_p2"].notna()].copy()
+    df = screening[
+        ~screening["degenerate"] & screening["ooc_p1"].notna() & screening["ooc_p2"].notna()
+    ].copy()
     eps = 1e-4
     df["x"] = df["ooc_p1"] + eps
     df["y"] = df["ooc_p2"] + eps
-    names = df.index.astype(str) if df.index.name else df.get("feature", pd.Series(df.index.astype(str)))
+    names = (
+        df.index.astype(str)
+        if df.index.name
+        else df.get("feature", pd.Series(df.index.astype(str)))
+    )
     hover = np.column_stack([names, df["delta"]])
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=df["x"], y=df["y"], mode="markers", name="Screened sensors",
-            marker={"size": 7, "color": df["delta"], "colorscale": "RdYlBu_r", "showscale": True, "colorbar": {"title": "Δ OOC"}},
+            x=df["x"],
+            y=df["y"],
+            mode="markers",
+            name="Screened sensors",
+            marker={
+                "size": 7,
+                "color": df["delta"],
+                "colorscale": "RdYlBu_r",
+                "showscale": True,
+                "colorbar": {"title": "Δ OOC"},
+            },
             customdata=hover,
             hovertemplate="%{customdata[0]}<br>Phase-I OOC %{x:.2%}<br>Phase-II OOC %{y:.2%}<br>Δ %{customdata[1]:.2%}<extra></extra>",
         )
     )
     max_rate = max(float(df["x"].max()), float(df["y"].max()), 0.01)
     fig.add_trace(
-        go.Scatter(x=[eps, max_rate], y=[eps, max_rate], mode="lines", name="No change", line={"color": "#111827", "dash": "dash"})
+        go.Scatter(
+            x=[eps, max_rate],
+            y=[eps, max_rate],
+            mode="lines",
+            name="No change",
+            line={"color": "#111827", "dash": "dash"},
+        )
     )
     _layout(fig, "SPC screening: Phase-II alarm rate versus Phase-I", height=500)
     fig.update_xaxes(title="Phase-I OOC alarm rate", type="log", tickformat=".1%")
@@ -362,13 +495,20 @@ def make_queue_fig(queue: pd.DataFrame, top_k: int = 20) -> go.Figure:
     custom = np.column_stack([df["rank"], df.get("decile", pd.Series([math.nan] * len(df)))])
     fig = go.Figure(
         go.Bar(
-            x=df["p_cal"], y=df["wafer_id"].astype(str), orientation="h",
-            marker_color=colors, customdata=custom,
+            x=df["p_cal"],
+            y=df["wafer_id"].astype(str),
+            orientation="h",
+            marker_color=colors,
+            customdata=custom,
             hovertemplate="wafer %{y}<br>calibrated risk %{x:.2%}<br>inspection rank %{customdata[0]}<br>risk decile %{customdata[1]}<extra></extra>",
             name="Calibrated risk",
         )
     )
-    _layout(fig, f"Inspection-priority queue: top {min(top_k, len(queue))} wafers", height=max(430, 28 * len(df) + 130))
+    _layout(
+        fig,
+        f"Inspection-priority queue: top {min(top_k, len(queue))} wafers",
+        height=max(430, 28 * len(df) + 130),
+    )
     fig.update_xaxes(title="Calibrated failure risk", tickformat=".1%", rangemode="tozero")
     fig.update_yaxes(title="Wafer ID")
     return fig
@@ -382,9 +522,29 @@ def make_alert_columns() -> list[dict]:
     return [
         {"field": "feature", "headerName": "Feature", "filter": True, "pinned": "left"},
         {"field": "drift", "headerName": "Drift", "filter": True},
-        {"field": "delta", "headerName": "Δ OOC", "valueFormatter": {"function": "d3.format('.2%')(params.value)"}},
-        {"field": "ooc_p1", "headerName": "Phase-I OOC", "valueFormatter": {"function": "d3.format('.2%')(params.value)"}},
-        {"field": "ooc_p2", "headerName": "Phase-II OOC", "valueFormatter": {"function": "d3.format('.2%')(params.value)"}},
-        {"field": "ewma_delta", "headerName": "Δ EWMA", "valueFormatter": {"function": "d3.format('.2%')(params.value)"}},
-        {"field": "miss_p2", "headerName": "Phase-II missing", "valueFormatter": {"function": "d3.format('.2%')(params.value)"}},
+        {
+            "field": "delta",
+            "headerName": "Δ OOC",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"},
+        },
+        {
+            "field": "ooc_p1",
+            "headerName": "Phase-I OOC",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"},
+        },
+        {
+            "field": "ooc_p2",
+            "headerName": "Phase-II OOC",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"},
+        },
+        {
+            "field": "ewma_delta",
+            "headerName": "Δ EWMA",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"},
+        },
+        {
+            "field": "miss_p2",
+            "headerName": "Phase-II missing",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"},
+        },
     ]

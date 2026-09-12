@@ -46,7 +46,7 @@ INDEX_MONITOR = ARTIFACTS / "index_monitor.csv"
 def compute_prediction_entropy(p: np.ndarray, eps: float = 1e-12) -> float:
     """Compute normalized Shannon binary entropy of predicted risks."""
     p = np.clip(p, eps, 1.0 - eps)
-    h = - (p * np.log2(p) + (1.0 - p) * np.log2(1.0 - p))
+    h = -(p * np.log2(p) + (1.0 - p) * np.log2(1.0 - p))
     return float(np.mean(h))
 
 
@@ -88,7 +88,9 @@ def evaluate_feature_drift(
     drift_feature_fraction: float = 0.25,
 ) -> dict:
     """Evaluate Stream B: Feature deviations against frozen Phase-I limits."""
-    valid_features = [f for f in key_features if f in phase1_limits.index and f in batch_features.columns]
+    valid_features = [
+        f for f in key_features if f in phase1_limits.index and f in batch_features.columns
+    ]
     if not valid_features:
         return {
             "n_features_checked": 0,
