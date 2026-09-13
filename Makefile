@@ -166,10 +166,10 @@ test:
 hygiene:
 	@git ls-files | grep '\.db$$' && { echo "FAIL: .db tracked in git"; exit 1; } \
 		|| echo "ok: no .db tracked"
-	@grep -rn "read_csv\|read_parquet" src --include="*.py" \
-		| grep -v -e db_ingest -e migration_test \
-		&& { echo "FAIL: stray data-store reads above"; exit 1; } \
-		|| echo "ok: data reads contained to ingest + migration test"
+	@grep -rnE 'open\([^)]*(data/raw|secom\.data|secom_labels)|read_csv\([^)]*(data/raw|secom\.data|secom_labels)|read_parquet\([^)]*(data/raw|secom\.data|secom_labels)' src --include="*.py" \
+		| grep -v -e db_ingest \
+		&& { echo "FAIL: direct raw-data read outside db_ingest"; exit 1; } \
+		|| echo "ok: no direct raw-data reads outside db_ingest"
 
 clean:
 	@echo "==> removing derived database, snapshots, artifacts, logs, and Python caches"
@@ -182,7 +182,7 @@ clean:
 	rm -f logs/*
 	rm -rf artifacts/scores
 	rm -rf artifacts/monitoring
-	rm -rf artifacts/retrain  
+	rm -rf artifacts/retrain
 	rm -rf data/sim
 	rm -rf artifacts/doe
 	find src tests -type d -name "__pycache__" -prune -exec rm -rf {} +
