@@ -1,0 +1,14 @@
+{
+  "run_id": "20260912_235000_score__batch_a_clean",
+  "timestamp": "20260912_235000",
+  "git_sha": "d3486d2",
+  "config": {
+    "script": "score",
+    "label": "batch_a_clean",
+    "start": "2026-01-05 00:00",
+    "end": "2026-01-09 03:01",
+    "train_run": "20260912_234903_xgb_sel",
+    "cal_run": "20260912_234955_cal-platt__xgb_sel",
+    "n_scored": 100
+  }
+}

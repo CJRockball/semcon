@@ -185,7 +185,9 @@ def test_score_design_ood_flags_expected_structure() -> None:
     assert out["knn_distance"].ge(0).all()
 
 
-def test_write_run_artifacts_and_append_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_run_artifacts_and_append_index(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     fake_artifacts = tmp_path / "artifacts"
     monkeypatch.setattr("semcon.doe_run.DOE_ROOT", fake_artifacts / "doe")
     monkeypatch.setattr("semcon.tracking.ARTIFACTS", fake_artifacts)

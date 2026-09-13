@@ -1,4 +1,5 @@
-run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift,data,snapshot_id,window,seasonal_winner,failfrac_order,exog_winner,exog_coef,exog_p,ro_winner,ro_mase,holdout_mase,holdout_coverage,s468_breach_share
-20260911_094237_spc,spc,robust,,590.0,0.025,0.3435,11.0,8085981d130b0af4,20260911_014237_bde31eaa,,,,,,,,,,,
-20260911_135749_spc,spc,robust,,590.0,0.025,0.3435,11.0,8085981d130b0af4,20260911_055749_bde31eaa,,,,,,,,,,,
-20260912_121155_sarimax,sarimax,,,,,,,,,50.0,sar14,"(0, 1, 1)",(none),-0.1133,0.0628,arima,0.743,0.547,1.0,0.0
+run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift,data,snapshot_id,window,seasonal_winner,failfrac_order,exog_winner,exog_coef,exog_p,ro_winner,ro_mase,holdout_mase,holdout_coverage,s468_breach_share,parent_run,score_dir,verdict,triage_rate,mean_risk,drift_fraction,n_drifted
+20260911_094237_spc,spc,robust,,590.0,0.025,0.3435,11.0,8085981d130b0af4,20260911_014237_bde31eaa,,,,,,,,,,,,,,,,,,
+20260911_135749_spc,spc,robust,,590.0,0.025,0.3435,11.0,8085981d130b0af4,20260911_055749_bde31eaa,,,,,,,,,,,,,,,,,,
+20260912_121155_sarimax,sarimax,,,,,,,,,50.0,sar14,"(0, 1, 1)",(none),-0.1133,0.0628,arima,0.743,0.547,1.0,0.0,,,,,,,
+20260913_104654_monitor_in_control,monitoring,,,,,,,,,,,,,,,,,,,,20260913_104539_xgb_sel,20260913_104641_score__holdout_replay,IN_CONTROL,0.013,0.0303,0.0,0.0

@@ -77,7 +77,13 @@ STYLES = {
         "padding": "10px 14px 14px",
         "marginBottom": "16px",
     },
-    "controls": {"display": "flex", "flexWrap": "wrap", "alignItems": "center", "gap": "12px", "margin": "6px 0 10px"},
+    "controls": {
+        "display": "flex",
+        "flexWrap": "wrap",
+        "alignItems": "center",
+        "gap": "12px",
+        "margin": "6px 0 10px",
+    },
     "label": {"fontWeight": "600", "fontSize": "0.9rem"},
 }
 
@@ -103,13 +109,19 @@ def configure_artifacts(artifacts: Path | None) -> Path:
 
 def _kpi(label: str, component_id: str) -> html.Div:
     return html.Div(
-        [html.Div(label, style=STYLES["kpi_label"]), html.Div("—", id=component_id, style=STYLES["kpi_value"])],
+        [
+            html.Div(label, style=STYLES["kpi_label"]),
+            html.Div("—", id=component_id, style=STYLES["kpi_value"]),
+        ],
         style=STYLES["kpi"],
     )
 
 
 def _panel(title: str, children: list) -> html.Div:
-    return html.Div([html.H3(title, style={"fontSize": "1.05rem", "margin": "6px 0 8px"}), *children], style=STYLES["panel"])
+    return html.Div(
+        [html.H3(title, style={"fontSize": "1.05rem", "margin": "6px 0 8px"}), *children],
+        style=STYLES["panel"],
+    )
 
 
 def _controls(label: str, component) -> html.Div:
@@ -148,13 +160,28 @@ def build_layout() -> html.Div:
                     dcc.Tab(
                         label="Process health",
                         children=[
-                            _panel("Yield p-chart", [dcc.Graph(id=IDS["pchart"], config={"displaylogo": False})]),
-                            _panel("Raw-channel protocol health", [dcc.Graph(id=IDS["row_missing"], config={"displaylogo": False})]),
+                            _panel(
+                                "Yield p-chart",
+                                [dcc.Graph(id=IDS["pchart"], config={"displaylogo": False})],
+                            ),
+                            _panel(
+                                "Raw-channel protocol health",
+                                [dcc.Graph(id=IDS["row_missing"], config={"displaylogo": False})],
+                            ),
                             _panel(
                                 "Dropout-indicator rates",
                                 [
-                                    _controls("Protocol feature", dcc.Dropdown(id=IDS["protocol_feature"], clearable=False, style={"minWidth": "260px"})),
-                                    dcc.Graph(id=IDS["protocol_rates"], config={"displaylogo": False}),
+                                    _controls(
+                                        "Protocol feature",
+                                        dcc.Dropdown(
+                                            id=IDS["protocol_feature"],
+                                            clearable=False,
+                                            style={"minWidth": "260px"},
+                                        ),
+                                    ),
+                                    dcc.Graph(
+                                        id=IDS["protocol_rates"], config={"displaylogo": False}
+                                    ),
                                 ],
                             ),
                         ],
@@ -162,15 +189,25 @@ def build_layout() -> html.Div:
                     dcc.Tab(
                         label="SPC screening",
                         children=[
-                            _panel("Phase-I versus Phase-II alarm-rate overview", [dcc.Graph(id=IDS["overview"], config={"displaylogo": False})]),
+                            _panel(
+                                "Phase-I versus Phase-II alarm-rate overview",
+                                [dcc.Graph(id=IDS["overview"], config={"displaylogo": False})],
+                            ),
                             _panel(
                                 "Screening alerts",
                                 [
                                     dag.AgGrid(
                                         id=IDS["alert_grid"],
                                         columnDefs=dash_figs.make_alert_columns(),
-                                        defaultColDef={"sortable": True, "filter": True, "resizable": True},
-                                        dashGridOptions={"pagination": True, "paginationPageSize": 15},
+                                        defaultColDef={
+                                            "sortable": True,
+                                            "filter": True,
+                                            "resizable": True,
+                                        },
+                                        dashGridOptions={
+                                            "pagination": True,
+                                            "paginationPageSize": 15,
+                                        },
                                         style={"height": "520px"},
                                     )
                                 ],
@@ -178,7 +215,14 @@ def build_layout() -> html.Div:
                             _panel(
                                 "Showcase channel: I / MR / EWMA",
                                 [
-                                    _controls("Feature", dcc.Dropdown(id=IDS["imr_feature"], clearable=False, style={"minWidth": "220px"})),
+                                    _controls(
+                                        "Feature",
+                                        dcc.Dropdown(
+                                            id=IDS["imr_feature"],
+                                            clearable=False,
+                                            style={"minWidth": "220px"},
+                                        ),
+                                    ),
                                     dcc.Graph(id=IDS["imr"], config={"displaylogo": False}),
                                 ],
                             ),
@@ -190,7 +234,14 @@ def build_layout() -> html.Div:
                             _panel(
                                 "Batch scoring queue",
                                 [
-                                    _controls("Scored batch", dcc.Dropdown(id=IDS["score_batch"], clearable=False, style={"minWidth": "360px"})),
+                                    _controls(
+                                        "Scored batch",
+                                        dcc.Dropdown(
+                                            id=IDS["score_batch"],
+                                            clearable=False,
+                                            style={"minWidth": "360px"},
+                                        ),
+                                    ),
                                     dcc.Graph(id=IDS["queue"], config={"displaylogo": False}),
                                 ],
                             )
@@ -293,7 +344,9 @@ def register_callbacks(app: Dash) -> None:
             return _message_figure("Protocol rates", error or "Choose a protocol feature")
         try:
             i_hold, i_tail = _split_boundaries(run)
-            return dash_figs.make_protocol_rates_fig(dash_data.load_protocol_rates(run), feature, i_hold, i_tail)
+            return dash_figs.make_protocol_rates_fig(
+                dash_data.load_protocol_rates(run), feature, i_hold, i_tail
+            )
         except (FileNotFoundError, ValueError, KeyError) as exc:
             return _message_figure("Protocol artifact contract error", str(exc))
 
@@ -324,7 +377,9 @@ def register_callbacks(app: Dash) -> None:
             batches = dash_data.list_score_batches()
         except FileNotFoundError:
             return [], None
-        options = [{"label": dash_data.run_label(batch), "value": batch["run_id"]} for batch in batches]
+        options = [
+            {"label": dash_data.run_label(batch), "value": batch["run_id"]} for batch in batches
+        ]
         return options, options[-1]["value"] if options else None
 
     @app.callback(
@@ -339,7 +394,9 @@ def register_callbacks(app: Dash) -> None:
             batches = {batch["run_id"]: batch for batch in dash_data.list_score_batches()}
             if run_id not in batches:
                 raise ValueError(f"score batch is no longer available: {run_id}")
-            return dash_figs.make_queue_fig(dash_data.load_score_queue(batches[run_id]), top_k=TOP_K)
+            return dash_figs.make_queue_fig(
+                dash_data.load_score_queue(batches[run_id]), top_k=TOP_K
+            )
         except (FileNotFoundError, ValueError, KeyError) as exc:
             return _message_figure("Score artifact contract error", str(exc))
 

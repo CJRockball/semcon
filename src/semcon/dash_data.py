@@ -218,7 +218,9 @@ def _resolve_score_col(df: pd.DataFrame, score_col: str | None) -> str:
     )
 
 
-def load_score_queue(batch: dict, score_col: str | None = None, top_k: int | None = None) -> pd.DataFrame:
+def load_score_queue(
+    batch: dict, score_col: str | None = None, top_k: int | None = None
+) -> pd.DataFrame:
     df = pd.read_parquet(artifact_path(batch, "scores"))
     col = _resolve_score_col(df, score_col)
     if "rank" in df.columns:

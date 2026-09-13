@@ -11,11 +11,19 @@ import pytest
 from semcon import dash_data
 
 SCREENING_COLS = [
-    "feature", "degenerate",
-    "ooc_p1", "ewma_p1", "miss_p1",
-    "ooc_p2", "ewma_p2", "miss_p2",
-    "ooc_tail", "ewma_tail", "miss_tail",
-    "delta", "ewma_delta",
+    "feature",
+    "degenerate",
+    "ooc_p1",
+    "ewma_p1",
+    "miss_p1",
+    "ooc_p2",
+    "ewma_p2",
+    "miss_p2",
+    "ooc_tail",
+    "ewma_tail",
+    "miss_tail",
+    "delta",
+    "ewma_delta",
 ]
 
 NEWEST = "20260911_135749_spc"

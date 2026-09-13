@@ -59,7 +59,9 @@ def test_parse_args_defaults() -> None:
 
 def test_parse_args_accepts_artifact_root_and_server_options(tmp_path: Path) -> None:
     root = tmp_path / "artifacts"
-    args = dash_app.parse_args(["--artifacts", str(root), "--host", "0.0.0.0", "--port", "9000", "--debug"])
+    args = dash_app.parse_args(
+        ["--artifacts", str(root), "--host", "0.0.0.0", "--port", "9000", "--debug"]
+    )
     assert args.artifacts == root
     assert args.host == "0.0.0.0"
     assert args.port == 9000
