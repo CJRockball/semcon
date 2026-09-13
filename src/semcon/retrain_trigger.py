@@ -139,13 +139,10 @@ def evaluate_retrain_trigger(
 
     # If the run explicitly has a 'verdict' column indicating RETRAIN_RECOMMENDED, flag it
     explicit_retrain = (
-        "verdict" in recent.columns
-        and recent["verdict"].eq("RETRAIN_RECOMMENDED").any()
+        "verdict" in recent.columns and recent["verdict"].eq("RETRAIN_RECOMMENDED").any()
     )
 
-    retrain = bool(
-        explicit_retrain or (len(recent) >= consecutive_runs and all(excursions))
-    )
+    retrain = bool(explicit_retrain or (len(recent) >= consecutive_runs and all(excursions)))
 
     verdict_str = "RETRAIN_RECOMMENDED" if retrain else "IN_CONTROL"
     reason = (
@@ -210,7 +207,11 @@ def main(argv=None):
         print(json.dumps(decision, indent=2))
     else:
         logger.info("[retrain_trigger] Verdict: %s", decision["verdict"])
-        logger.info("[retrain_trigger] Recommended: %s | %s", decision["retrain_recommended"], decision["reason"])
+        logger.info(
+            "[retrain_trigger] Recommended: %s | %s",
+            decision["retrain_recommended"],
+            decision["reason"],
+        )
 
     # Persist decision artifact for auditability
     DECISION_DIR.mkdir(parents=True, exist_ok=True)
