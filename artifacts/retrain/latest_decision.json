@@ -1,0 +1,12 @@
+{
+  "retrain_recommended": true,
+  "verdict": "RETRAIN_RECOMMENDED",
+  "reason": "Observed recent max_delta values [0.3435] against threshold 0.05",
+  "metric_inspected": "max_delta",
+  "recent_values": [
+    0.3435
+  ],
+  "threshold": 0.05,
+  "consecutive_runs_required": 1,
+  "records_inspected": 1
+}

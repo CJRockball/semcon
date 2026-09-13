@@ -11,6 +11,11 @@
 #                   train-base, train-sel, calibrate, spc, sarimax
 #   make test       pytest
 #   make hygiene    repo policy checks (no tracked .db, no stray data reads)
+#   make demo        serving demo: simulate 3 lots -> score -> reconciled
+#                    holdout replay -> scorecards -> monitor
+#   make monitor     production surveillance: stream A risk + stream B drift
+#   make trigger     drift-to-retrain policy gate on index_monitor.csv
+#   make doe         surrogate DOE: design -> run -> analyze
 #
 # Console scripts come from pyproject.toml; the two data-layer stages use
 # python -m until semcon-ingest / semcon-extract entry points land (Phase 5).
@@ -35,7 +40,7 @@ DOE_DESIGN := $(UV) semcon-doe-design
 DOE_RUN := $(UV) semcon-doe-run
 DOE_ANALYZE := $(UV) semcon-doe-analyze
 DASH      := $(UV) semcon-dash
-
+TRIGGER := $(UV) semcon-retrain-trigger
 
 # Variables
 DOE_LABEL := s060-factorial
@@ -56,7 +61,8 @@ BASE_RUN := xgb_base
 SEL_RUN  := xgb_sel
 
 .PHONY: all ingest extract explore features train train-base train-sel \
-        calibrate spc sarimax doe test hygiene clean demo dash monitor
+        calibrate spc sarimax doe test hygiene clean demo dash monitor \
+		trigger
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -110,6 +116,7 @@ dash:
 	@echo "==> launch monitoring dashboard"
 	$(DASH)
 
+
 # Batch windows mirror simulate_lots.py defaults (seed 7, start 2026-01-05);
 # the holdout window mirrors the SECOM snapshot zone boundaries. Change together.
 demo: calibrate
@@ -128,6 +135,13 @@ demo: calibrate
 	@echo "==> monitoring evaluation"
 	$(MONITOR)
 
+monitor:
+	@echo "==> production monitoring (stream A risk + stream B feature drift)"
+	$(MONITOR)
+
+trigger:
+	@echo "==> evaluating drift-to-retrain policy from index_monitor.csv"
+	$(TRIGGER)
 
 # Surrogate DOE chain. Design/run/analyze stages stay separate on disk; this
 # target just wires them through the latest_design / latest_run pointers.
@@ -168,6 +182,7 @@ clean:
 	rm -f logs/*
 	rm -rf artifacts/scores
 	rm -rf artifacts/monitoring
+	rm -rf artifacts/retrain  
 	rm -rf data/sim
 	rm -rf artifacts/doe
 	find src tests -type d -name "__pycache__" -prune -exec rm -rf {} +

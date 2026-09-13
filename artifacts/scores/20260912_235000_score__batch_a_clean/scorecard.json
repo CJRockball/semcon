@@ -1,0 +1,18 @@
+{
+  "n_scored": 100,
+  "p_median": 0.024128272214617053,
+  "p_mean": 0.039953546775446366,
+  "p90": 0.030565010707679207,
+  "clq14_top_decile_share": 0.7,
+  "clq14_batch_share": 0.62,
+  "clq14_enrichment": 1.129032258064516,
+  "n_fails": 8,
+  "base_rate": 0.08,
+  "top_decile_fails": 6,
+  "top_decile_capture": 0.75,
+  "top_decile_lift": 7.5,
+  "recall_at_flag_0.05": 0.5,
+  "recall_at_flag_0.10": 0.75,
+  "score_run": "20260912_235000_score__batch_a_clean",
+  "label": "batch_a_clean"
+}

@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "run_id": "20260913_104654_monitor_in_control",
+    "timestamp": "20260913_104654",
+    "git_sha": "d3486d2",
+    "python": "3.11.14",
+    "packages": {
+      "numpy": "2.4.6",
+      "pandas": "3.0.5",
+      "scikit-learn": "1.9.0",
+      "xgboost": "2.1.1"
+    },
+    "note": "",
+    "config": {
+      "script": "monitor",
+      "timestamp": "20260913_104654",
+      "train_run": "20260913_104539_xgb_sel",
+      "cal_run": "20260913_104628_cal-platt__xgb_sel",
+      "score_dir": "/home/python_user/coding/ds/semcon/artifacts/scores/20260913_104641_score__holdout_replay",
+      "verdict": "IN_CONTROL",
+      "rationale": "Normal operation: triage rate 1.30%, feature drift fraction 0.0% within limits.",
+      "action": "Continue standard automated wafer scoring.",
+      "metrics": {
+        "mean_risk": 0.0303,
+        "triage_rate": 0.013,
+        "entropy": 0.1891,
+        "drift_fraction": 0.0,
+        "max_feature_z": 0.0
+      }
+    }
+  },
+  "config": {
+    "script": "monitor",
+    "timestamp": "20260913_104654",
+    "train_run": "20260913_104539_xgb_sel",
+    "cal_run": "20260913_104628_cal-platt__xgb_sel",
+    "score_dir": "/home/python_user/coding/ds/semcon/artifacts/scores/20260913_104641_score__holdout_replay",
+    "verdict": "IN_CONTROL",
+    "rationale": "Normal operation: triage rate 1.30%, feature drift fraction 0.0% within limits.",
+    "action": "Continue standard automated wafer scoring.",
+    "metrics": {
+      "mean_risk": 0.0303,
+      "triage_rate": 0.013,
+      "entropy": 0.1891,
+      "drift_fraction": 0.0,
+      "max_feature_z": 0.0
+    }
+  },
+  "verdict": {
+    "verdict": "IN_CONTROL",
+    "rationale": "Normal operation: triage rate 1.30%, feature drift fraction 0.0% within limits.",
+    "output_health": {
+      "n_wafers": 231,
+      "mean_risk": 0.0303,
+      "std_risk": 0.0226,
+      "triage_rate": 0.013,
+      "entropy": 0.1891,
+      "risk_ooc": false
+    },
+    "feature_drift": {
+      "n_features_checked": 0,
+      "n_features_drifted": 0,
+      "drift_fraction": 0.0,
+      "drifted_features": [],
+      "max_feature_z": 0.0,
+      "feature_drift_flag": false
+    },
+    "recommended_action": "Continue standard automated wafer scoring."
+  }
+}
