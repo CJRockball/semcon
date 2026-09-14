@@ -72,7 +72,7 @@ The monitoring verdict is intentionally compact: `IN_CONTROL`, `INVESTIGATE_CHAM
 
 ## Traceability in the interface
 
-Every decision-facing display preserves provenance. At minimum, the dashboard shows:
+Every decision-facing display preserves provenance. The dashboard exposes, or makes accessible through registered artifacts, the active model/calibrator identifiers, batch label, monitoring timestamp, threshold context, and decision-artifact reference:
 
 - The active training run and calibrator run (e.g., `20260914_093559_xgb_sel` + `20260914_093608_cal_platt`).
 - The batch or score-run label being viewed (`batch_a_clean`, `batch_b_shift`, `batch_c_dropout`, `holdout_replay`).

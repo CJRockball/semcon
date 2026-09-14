@@ -26,7 +26,7 @@ The use of frozen reference limits prevents a monitoring system from normalizing
 
 ## Process surveillance interface
 
-The Dash interface provides real-time visualization of individual and moving range (I-MR) charts alongside temporal feature progressions:
+The Dash interface provides an interactive visualization of persisted process-monitoring artifacts:
 
 ![SPC and Process Surveillance](../assets/screenshots/dash_imr2.png)
 *Figure 3.1: Inline I-MR process surveillance chart displaying sensor time-series trajectories against Phase-I upper and lower control limits (UCL/LCL).*
