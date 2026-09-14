@@ -1,8 +1,12 @@
 # Semiconductor Yield-Risk Decision Support
 
-A reproducible, time-aware machine-learning and process-analytics workflow built on the UCI SECOM dataset. The project turns high-dimensional, sparse manufacturing measurements into calibrated yield-risk rankings, batch scorecards, statistical monitoring, surrogate DOE evidence, and governed retraining recommendations.
+A reproducible, time-aware machine-learning and process-analytics workflow built on the UCI SECOM dataset. The project converts high-dimensional, sparse manufacturing measurements into calibrated yield-risk rankings, batch scorecards, statistical monitoring, surrogate DOE evidence, and governed retraining recommendations.
 
 > **Scope:** This is a portfolio implementation using historical SECOM data. It is not connected to a fab MES, FDC, APC, or quality-disposition system. It does not autonomously hold lots, change recipes, diagnose a physical root cause, or deploy a replacement model.
+
+![Dash operational overview](assets/screenshots/dash_over2.png)
+
+*The Dash interface presents batch risk, inspection-priority evidence, and registered operational artifacts. It is a decision-support layer, not an autonomous manufacturing-control system.*
 
 ## What it does
 
@@ -12,12 +16,25 @@ Raw SECOM files
   → time-aware preprocessing and feature engineering
   → XGBoost training, calibration, evaluation, and explanation
   → batch scoring and inspection-priority scorecards
-  → SPC / forecasting / model-health monitoring
+  → SPC, forecasting, and model-health monitoring
   → Dash decision-support interface
   → governed retraining recommendation
 ```
 
-The system is designed around an operational question: given constrained inspection and engineering capacity, which observations or replayed lots deserve attention, and is the evidence consistent with routine variation, a process/data investigation, or a model-review event?
+The system is designed around an operational question: given constrained inspection and engineering capacity, which observations or replayed lots deserve attention, and is the available evidence consistent with routine variation, a process/data investigation, or a model-review event?
+
+## Highlights
+
+| Capability | Implementation | Operational value |
+|---|---|---|
+| Governed data layer | SQLite ingestion, SQL extraction, column registry, snapshots | Separates raw, derived, and model-facing data; preserves lineage |
+| Time-aware validation | Development period plus protected chronological holdout | Tests on later observations rather than relying on an unrestricted random split |
+| Calibrated risk model | XGBoost, registered feature contract, Platt calibration | Supports probability-based inspection triage rather than raw score ranking alone |
+| Batch scoring | Contract validation, score outputs, scorecards, replay scenarios | Converts a model run into a repeatable inspection-priority workflow |
+| Process surveillance | SPC, SARIMAX, feature drift, output-health checks | Separates process/data investigation from routine scoring |
+| Surrogate DOE | Raw-sensor factors, observed-support levels, OOD diagnostics | Produces bounded engineering hypotheses without claiming causal process effects |
+| Model governance | Monitoring verdicts, retraining policy, artifact registry | Makes retraining a reviewable decision rather than an automatic overwrite |
+| Decision interface | Dash and Plotly artifact-driven views | Presents risk, monitoring, and provenance for human review |
 
 ## Repository layout
 
@@ -26,16 +43,16 @@ The system is designed around an operational question: given constrained inspect
 ├── src/semcon/       # Pipeline, models, scoring, monitoring, dashboard, DOE
 ├── tests/            # Unit and integration-style contract tests
 ├── docs/             # Technical documentation by lifecycle stage
+├── assets/           # Curated documentation screenshots
 ├── notebooks/        # Exploratory analysis notebooks
 ├── config/           # Versioned runtime configuration
 ├── data/             # Local source, SQLite, snapshots; raw data is not tracked
 ├── artifacts/        # Registered derived runs and decision artifacts
-├── validation.md     # Validation protocol and canonical run evidence
-├── doe.md            # Detailed DOE implementation notes
+├── validation.md     # Controlled validation record and append-only decision ledger
 └── Makefile          # Reproducible pipeline and hygiene commands
 ```
 
-The Python package separates responsibilities rather than hiding the workflow in one notebook. Data ingestion and extraction, feature engineering, training, calibration, scoring, SPC, forecasting, DOE, monitoring, retraining policy, Dash presentation, and artifact tracking are implemented as explicit modules under `src/semcon/`.
+The Python package separates responsibilities rather than hiding the workflow in one notebook. Ingestion, extraction, feature engineering, training, calibration, scoring, SPC, forecasting, DOE, monitoring, retraining policy, Dash presentation, and artifact tracking are explicit modules under `src/semcon/`.
 
 ## Quick start
 
@@ -49,53 +66,56 @@ cd semcon
 uv sync
 ```
 
-### 2. Obtain the data
+### 2. Obtain data
 
-Download the SECOM source data from the UCI Machine Learning Repository and place the required files in the local data location expected by the ingestion command. The raw dataset and the generated SQLite database are deliberately excluded from Git.
+Download the SECOM source data from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/179/secom) and place the required files in the local location expected by the ingestion command. Raw source data and the generated SQLite database are deliberately excluded from Git.
 
-### 3. Run checks
+See [`data/README.md`](data/README.md) for the data contract, source files, database layout, split policy, lineage, and regeneration details.
+
+### 3. Verify the repository
 
 ```bash
 make test
 make hygiene
 ```
 
-`make test` runs the repository test suite. `make hygiene` checks the repository policy that generated databases are not tracked and that direct file reads remain contained to the intended data-layer boundary.
+`make test` runs the repository test suite. `make hygiene` enforces repository policy: generated databases are not tracked, and direct data reads remain contained to the intended data-layer boundary.
 
-### 4. Run the pipeline
+### 4. Rebuild the core pipeline
 
 ```bash
+make clean
 make
 ```
 
-The default pipeline performs ingestion, extraction, exploration, feature engineering, baseline and selected-feature model training, calibration, SPC, and SARIMAX stages according to the Makefile dependencies. Training and analysis runs write versioned artifacts under `artifacts/`.
+`make clean` removes derived databases, snapshots, artifacts, logs, replay data, and caches while preserving raw source data and the local environment. `make` rebuilds the core path: ingestion, extraction, exploration, feature engineering, baseline and selected-feature training, calibration, SPC, and SARIMAX.
 
-### 5. Exercise the batch workflow
+### 5. Exercise batch scoring
 
 ```bash
 make demo
 ```
 
-The demo path replays deterministic incoming-lot scenarios, scores the resulting batches, runs a reconciled holdout replay, and creates scorecards. These scenarios are test and demonstration fixtures—not evidence of a live manufacturing feed.
+The demonstration path creates deterministic incoming-lot scenarios, scores the batches, runs a reconciled chronological-holdout replay, and creates scorecards. These are integration-test fixtures and portfolio evidence—not a live manufacturing data feed.
 
 ## Documentation
 
-The documentation is split by the questions a reader is likely to ask when reviewing an applied ML system. Read it in sequence for the complete design narrative, or jump to the topic most relevant to your role.
+The technical documentation follows the data-to-decision lifecycle. Read it in sequence for the complete architecture, or jump directly to the area relevant to your review.
 
 | Guide | Focus |
 |---|---|
 | [Data and preprocessing](docs/01_data_and_preprocessing.md) | Dataset structure, time boundary, missingness clusters, feature policy, and leakage controls |
-| [Modelling and results](docs/02_modelling_and_results.md) | Decision objective, model contract, temporal validation, calibration, and interpretation of results |
+| [Modelling and results](docs/02_modelling_and_results.md) | Decision objective, model contract, temporal validation, calibration, and result interpretation |
 | [Process monitoring and forecasting](docs/03_process_monitoring_and_forecasting.md) | Phase-I/Phase-II SPC, alert interpretation, and SARIMAX forecasting |
-| [Surrogate DOE](docs/04_surrogate_doe.md) | Factor eligibility, observed-support design levels, OOD checks, interaction analysis, and causal limits |
+| [Surrogate DOE](docs/04_surrogate_doe.md) | Factor eligibility, observed-support levels, OOD checks, interaction analysis, and causal limits |
 | [Dashboard and decision support](docs/05_dashboard_and_decision_support.md) | Dash interface, scorecards, operational questions, and traceability |
 | [Batch scoring and retraining governance](docs/06_mlops_batch_scoring_and_governance.md) | Batch contract, scenario replay, monitoring states, artifact lineage, retraining policy, tests, and CI |
-| [Validation record](validation.md) | Evaluation protocol, canonical run evidence, and methodology decisions |
-| [DOE implementation notes](doe.md) | Command-level and artifact-level details for the surrogate DOE workflow |
+| [Data contract](data/README.md) | Source layout, database schema, registry rules, snapshots, and local regeneration |
+| [Validation record](validation.md) | Canonical model evidence, validation decision, residual risks, and append-only ledger |
 
 ## Operational workflow
 
-The project distinguishes prediction, monitoring, and retraining because they answer different questions.
+Prediction, monitoring, and retraining are deliberately separated because they answer different questions.
 
 ```text
 Incoming or replayed batch
@@ -103,7 +123,7 @@ Incoming or replayed batch
   → calibrated risk scoring
   → scorecard and inspection-priority ranking
   → feature-drift and output-health monitoring
-  → policy evaluation
+  → retraining-policy evaluation
 
 IN_CONTROL
   → continue normal scoring and surveillance
@@ -112,51 +132,59 @@ INVESTIGATE_CHAMBER
   → review measurement/process context and data lineage
 
 RETRAIN_RECOMMENDED
-  → start governed model review; do not automatically deploy a replacement
+  → start governed candidate-model review; do not automatically deploy a replacement
 ```
 
-`INVESTIGATE_CHAMBER` is an operational routing label, not a claim that the system has identified a physical chamber fault. SECOM does not include the tool, chamber, recipe, maintenance, or genealogy metadata needed to make that attribution.
+The `INVESTIGATE_CHAMBER` label is an operational routing shorthand, not a claim that the system has identified a physical chamber fault. SECOM does not provide chamber, tool, recipe, maintenance, or genealogy metadata required for that attribution.
 
-## Technical choices
+## Canonical portfolio run
 
-| Area | Implementation | Why it matters |
-|---|---|---|
-| Data boundary | SQLite ingestion, validated extraction, snapshots, column registry | Avoids uncontrolled file reads and makes transformations inspectable |
-| Temporal validation | Development period plus protected chronological holdout | Better reflects the future-data question than an unrestricted random split |
-| Predictive model | XGBoost binary classifier with feature contract | Handles nonlinear, sparse, high-dimensional tabular structure |
-| Calibration | Registered probability calibrator | Supports thresholded triage and probability-based monitoring |
-| Explainability | TreeSHAP summaries | Identifies model-relevant signals without claiming physical causality |
-| Process surveillance | SPC and SARIMAX | Separates change detection from near-term temporal forecasting |
-| Experimentation | Surrogate factorial DOE with OOD checks | Generates bounded hypotheses from the model within observed support |
-| Operations | Batch scoring, scorecards, monitoring, retraining policy, Dash | Demonstrates an auditable lifecycle beyond offline model fitting |
+The final clean-rebuild model bundle is documented in [`validation.md`](validation.md):
 
-## What this project does not claim
+| Artifact | Canonical identifier |
+|---|---|
+| Selected model | `20260914_093559_xgb_sel` |
+| Bound calibrator | `20260914_093608_cal_platt` |
+| Status | Accepted for reproducible portfolio demonstration |
 
-The project is deliberately explicit about the boundary between a rigorous portfolio workflow and a production fab system.
+The validation record is intentionally stricter than a README summary. It states intended use, data boundaries, validation protocol, operational evidence, residual risks, and the required review before any future candidate model can be promoted.
 
-- **Predictive association is not causal process knowledge.** A feature with high model importance or SHAP contribution is relevant to the fitted model; it is not proof of a root cause.
-- **Surrogate DOE is not a physical DOE.** Factor settings use observed data support and model predictions; recipe changes require controlled, safe, physical confirmation.
-- **Monitoring is not autonomous control.** Alerts route a human investigation and do not release, hold, or alter product or equipment.
-- **A retraining recommendation is not deployment.** Data lineage, label maturity, validation, calibration, incumbent comparison, and approval are required before promotion.
-- **SECOM is not a complete fab data model.** It lacks chamber/tool identity, recipe, layer, product, lot genealogy, maintenance events, wafer maps, and physical sensor units.
+## Evidence and artifacts
 
-These constraints are not hidden limitations; they determine the design. The project demonstrates how to build a technically defensible analytics workflow when data is wide, sparse, imbalanced, and time-dependent, while avoiding claims that the available evidence cannot support.
+Generated runs are registered under `artifacts/`. The repository keeps a distinction between machine-generated evidence and curated presentation assets:
 
-## Reproducibility
+| Location | Purpose |
+|---|---|
+| `artifacts/runs/` | Training, calibration, SPC, forecasting, and validation outputs |
+| `artifacts/scores/` | Batch scoring and scorecard outputs |
+| `artifacts/monitoring/` and `artifacts/index_monitor.csv` | Monitoring reports and append-only surveillance ledger |
+| `artifacts/retrain/` | Governed retraining-policy outputs |
+| `artifacts/doe/` | Design matrices, surrogate predictions, OOD diagnostics, effects, and interaction artifacts |
+| `assets/screenshots/` | Curated stable images used in README and technical documentation |
 
-Runs are registered with configuration and artifact metadata so that a displayed score, monitoring decision, or DOE result can be traced back through its upstream model and data boundary. The intended lineage is:
+A displayed score, monitoring decision, or DOE result should be traceable through the registered artifact chain:
 
 ```text
 Dashboard or decision artifact
   → monitoring report or scorecard
   → scored batch
-  → calibrator and training run
+  → calibration and training run
   → feature contract and configuration
   → extraction and snapshot boundary
 ```
 
-The source package, Makefile, test suite, and GitHub Actions workflow provide the operational backbone. Exact CLI entry points and stage dependencies are defined in `pyproject.toml` and the Makefile; check those files as the source of truth when adapting the workflow.
+## Boundaries and limitations
 
-## License and data attribution
+The project is explicit about the difference between a rigorous portfolio workflow and a live manufacturing system.
 
-Code in this repository is released under the MIT License. The SECOM dataset is external to this repository and remains subject to the terms and attribution requirements of its original source.
+- **Predictive association is not causal process knowledge.** Model importance and SHAP attribution identify signals relevant to the fitted model; they do not prove a root cause.
+- **Surrogate DOE is not a physical DOE.** Factor contrasts use observed support and model predictions. Any recipe change requires controlled physical confirmation within approved operating ranges.
+- **Monitoring is not autonomous control.** Alerts route a human investigation and do not release, hold, or alter product or equipment.
+- **A retraining recommendation is not deployment.** Data lineage, label maturity, validation, calibration, incumbent comparison, and explicit approval are required before promotion.
+- **SECOM is not a complete fab data model.** It lacks chamber/tool identity, recipe, product/layer context, lot genealogy, maintenance events, wafer maps, and physical sensor units.
+
+These constraints determine the design. The objective is to demonstrate a technically defensible analytics lifecycle for wide, sparse, imbalanced, time-dependent manufacturing data while avoiding claims the evidence cannot support.
+
+## License and attribution
+
+Code in this repository is released under the MIT License. The SECOM dataset is external to the repository and remains subject to the terms and attribution requirements of its original source.
