@@ -1,187 +1,184 @@
-<!-- Save as: validation.md (repo root) -->
+# Model validation record
 
-# Validation — SECOM Pipeline
+[Home](README.md) · [Modelling and results](docs/02_modelling_and_results.md) · [MLOps and governance](docs/06_mlops_batch_scoring_and_governance.md)
 
-This document states what can go wrong in this pipeline and where each guard
-lives. Every claim in the README traces back to a rule documented here.
+> **Document purpose:** This is the controlled, human-readable validation record for the canonical portfolio model. It complements the machine-readable run ledgers in `artifacts/index.csv` and `artifacts/index_monitor.csv`; it does not replace them.
 
-## 1. Data extraction contract
+| Document control | Value |
+|---|---|
+| System | Semiconductor yield-risk decision support (`semcon`) |
+| Current canonical model | `20260914_093559_xgb_sel` |
+| Bound calibration run | `20260914_093608_cal_platt` |
+| Canonical rebuild date | 2026-09-14 |
+| Validation status | Accepted for reproducible portfolio demonstration |
+| Document owner | Repository maintainer |
+| Scope | Historical SECOM data, deterministic local batch replay, and artifact-based review |
+| Prohibited interpretation | This record is not a production-release approval or authorization for autonomous manufacturing control |
 
-The bronze layer (SQLite) stores raw values: target as −1/1, timestamps as
-ISO-8601 TEXT. No encoding, no typing at rest.
+## 1. Intended use
 
-Typing and semantic encoding happen at the read boundary:
+The system estimates and ranks the risk of an adverse quality outcome from high-dimensional semiconductor sensor measurements. Its intended role is **decision support**: prioritize observations or replayed lots for inspection and engineering review, summarize batch-level risk, and provide structured evidence when input or output behavior differs from a defined reference state.
 
-- `extract.py` coerces timestamps via `pd.to_datetime(..., format="ISO8601")`
-- `validate.py` is the single home of `is_fail` (0/1), created by
-  `ensure_is_fail()` and registered in `column_registry` as
-  `role=target, derived_from=target`. Consumers (`train_xgb`, `calibrate`,
-  scoring) call `ensure_is_fail` — no consumer recodes labels itself, and the
-  recode is never persisted back to bronze.
+The model is not intended to:
 
-**Ordering is a pipeline invariant.** All positional logic assumes the frame
-sorted by `(timestamp, wafer_id)` — timestamps are not guaranteed unique, so
-the tie-break key is mandatory. The sort lives in one place (`extract.py`);
-consumers inherit it. `splits.json` indices are meaningful only under this
-ordering.
+- Release, hold, scrap, or disposition wafers or lots.
+- Change a process recipe, tool setting, or maintenance plan.
+- Attribute an excursion to a particular chamber, tool, supplier, process layer, or operator.
+- Establish a causal sensor-to-yield relationship.
+- Deploy a replacement model automatically after a monitoring event.
 
-**Guards:** the migration regression test (`src/semcon/migration_test.py`,
-pending graduation to `tests/`) compares old flat-file artifacts against DB
-extraction and passes bitwise — post-migration runs reproduce pre-migration
-predictions exactly. The fingerprint chain (`data_fingerprint()` in `db.py`)
-records raw-file SHA-256 + SQL-text hash per run; two runs with the same
-fingerprint read the same bytes.
+All operational actions remain human-owned. The system’s outputs are risk estimates, monitoring signals, and governed recommendations—not commands.
 
-**What it prevents:** silent divergence between "the data the old pipeline
-saw" and "the data the new pipeline sees"; label-encoding drift between
-consumers; tie-order instability at split boundaries.
+## 2. Data lineage and scope
 
-## 2. Split discipline
+The project uses the UCI SECOM dataset as a portfolio proxy for wide, sparse semiconductor manufacturing data. Source files are ingested into SQLite and consumed through a validated extraction path rather than repeatedly read from unconstrained files. The pipeline records derived artifacts under `data/` and `artifacts/`, including run configuration, feature contract, and score outputs.
 
-Three time-ordered zones, defined by two config decisions
-(`src/semcon/config.py`, each with its EDA provenance in a comment):
+### Temporal policy
 
-| Zone | Rows (0-indexed) | Count | Fails | Role |
-|---|---|---|---|---|
-| `cv` | 0–1308 | 1,309 | 90 | training + repeated CV |
-| `holdout` | 1309–1539 | 231 | 14 | one-shot evaluation, spent exactly once |
-| `excluded` | 1540–1566 | 27 | 0 | regime break; monitored by SPC only |
+Chronology is part of the evaluation design. The development period is separated from a protected chronological tail holdout. A later regime with a documented missing-data deterioration is excluded according to the configured boundary. Internal validation is performed within the development period; the tail holdout is reserved for final evaluation and is not used to select features, tune the final model, or fit probability calibration.
 
-**CUTOFF = `2008-10-05 05:30:00`** sits strictly between the last CV wafer
-(04:48:00) and the first holdout wafer (05:31:00). **EXCLUDE_AFTER** marks the
-NaN-explosion regime break (EDA §3.5). Both are *decisions*: they change only
-by a deliberate config edit, with the EDA reference, as their own commit.
+The configured pipeline uses five internal folds and a fixed tail holdout of 231 observations. Exact cutoff and exclusion parameters are versioned in `src/semcon/config.py` and associated run metadata.
 
-The `split` column in the extracted frame is the single source of split truth
-(SQL `CASE` in `sql/extract_wafers.sql`; `NULL` boundaries yield `unassigned`
-so a pre-decision full frame never carries a false label). The equivalence
-guard in `train_xgb.py` asserted that the SQL split reproduces the legacy
-positional split exactly — fired and passed with the first CUTOFF-era runs
-(2026-09-02), after which the positional logic was retired.
+### Missingness and feature policy
 
-**Boundary rules:** no timestamp may equal a boundary (SQL `BETWEEN` is
-inclusive); `extract.py` raises on an exact clash. Fail counts are
-run-recorded (`n_train_fails` / `n_holdout_fails` in `splits.json`), not
-folklore — see §7.
+Missingness is treated as a potentially informative observation-process signal, not merely a value to fill. The data workflow screens columns for excessive missingness, low information, and redundancy. Selected missingness-cluster indicators may be engineered as model inputs where supported by exploration.
 
-**Why the tail is excluded:** the SPC protocol charts show a
-measurement-protocol change — clique-sensor missing rates go 36% → 94% → 100%
-across the three phases. A value-based model cannot anticipate a protocol
-change; including the tail would test the model on data the deployment
-process would never produce.
+These engineered missingness features are predictive features only. They are not physical process knobs and are deliberately excluded from surrogate DOE factor selection. The model feature list is stored as a run-level contract; scoring and downstream analysis resolve the contract rather than relying on an assumed column order.
 
-## 3. Fit-inside-fold
+### Data limitations
 
-Anything with learned parameters is fit inside the CV fold, never on the
-full pool. This applies to:
+SECOM does not include the manufacturing metadata needed for a live fab deployment. In particular, it lacks validated tool and chamber identity, recipe version, product and layer context, lot and wafer genealogy, maintenance events, metrology context, wafer-map structure, and physical sensor units. The model therefore cannot make chamber-level, recipe-level, or causal manufacturing claims.
 
-- **Feature selection** (`selection.py`, Hedges' g filter) — fit per fold;
-  the stable-29 are the post-CV intersection of fold-level survivors
-- **Calibration** (`calibrate.py`, Platt/isotonic) — fit on out-of-fold
-  predictions only
-- **Threshold tuning** — on OOF predictions only; the holdout is evaluated
-  once, at the frozen threshold
+## 3. Canonical model specification
 
-**What it prevents:** CV metrics inflated by information leaking from the
-validation fold into the feature set, the calibration map, or the operating
-point.
+| Component | Canonical reference | Validation relevance |
+|---|---|---|
+| Selected training run | `20260914_093559_xgb_sel` | Current portfolio candidate; selected-feature XGBoost model |
+| Baseline training run | `20260914_093551_xgb_base` | Comparator for feature-selection and model-complexity decisions |
+| Calibration run | `20260914_093608_cal_platt` | Platt calibration artifact associated with the selected training run |
+| Feature contract | Training-run `features.json` artifact | Defines required feature names and order for scoring |
+| Model artifact | Training-run `model.ubj` artifact | Frozen fitted XGBoost booster used for canonical scoring |
+| Scoring outputs | `artifacts/scores/20260914_093612_score__batch_a_clean` and later score runs | Evidence of batch-scoring behavior under the canonical model bundle |
+| Monitoring ledger | `artifacts/index_monitor.csv` | Append-only record of monitoring evidence and verdicts |
+| Retraining decision | `artifacts/retrain/latest_decision.json` | Policy output; not an automatic model-promotion event |
 
-## 4. Column-quality rules and the one supervised exception
+The selected model and calibration artifact must be consumed as a bundle. Scoring rebuilds engineered features, validates the feature contract, and emits calibrated risk when the calibration artifact is available. This reduces the risk of incompatible feature ordering, missing engineered columns, or accidental pairing of a model with the wrong calibration object.
 
-The retirement rules in `explore.py` (590 → 333 retired → 257 active) are
-unsupervised: constant, missingness > 50%, dominant value > 99%, CV < 0.01,
-< 5 unique values, correlated pairs at |r| > 0.95. Each retirement is written
-to `column_registry` with the rule and threshold as its reason.
+## 4. Validation protocol
 
-**One exception:** the NZV-rescue rule (`dev_fail_rate / fail_rate >= 2.0`)
-uses the target. It is supervised and therefore carries mild leakage
-exposure. It is applied globally today; now that CUTOFF exists, the queued
-fix — compute the rescue on the CV pool only — is unblocked and is the one
-open leakage item in this document.
+### Development and holdout separation
 
-**EDA disclosure:** the retirement rules were derived from EDA run on all
-1,567 rows including the future holdout. All rules except the NZV rescue are
-unsupervised, so the risk is minimal, but it is stated here rather than
-assumed away.
+The selected pipeline is developed using the historical development window and internal cross-validation. The chronological holdout is preserved for final evaluation. This design is more realistic than an unrestricted random split because a deployed model scores later observations, not randomly sampled replicas of its own training period.
 
-## 5. Registry governance
+### Evaluation criteria
 
-`column_registry` is a ledger, not a cache. It records who created or retired
-a column and why (`derived_from` lineage for engineered columns). It never
-learns which features a model selected — the stable-29 live in the run folder
-(`features.json`), versioned per run. The registry answers "is this column
-usable at all"; the run answers "which usable columns won this time."
+The validation assessment considers multiple dimensions:
 
-**Whoever creates a column registers it:** `db_ingest` (raw set), `extract`
-(`split`), `feature_eng` (engineered columns), `validate` (`is_fail`).
+| Dimension | Evidence | Why it matters |
+|---|---|---|
+| Discrimination | PR-AUC and ROC-AUC from registered evaluation artifacts | Tests whether higher-risk observations are ranked above lower-risk observations |
+| Imbalance-aware performance | PR-AUC interpreted against positive-class prevalence | Avoids overstating accuracy or ROC-AUC in an imbalanced problem |
+| Operational utility | Precision, recall, and triage volume at the configured threshold | Relates model output to constrained inspection capacity |
+| Probability reliability | Calibration outputs and calibrated scoring behavior | Supports risk thresholds, scorecards, and distribution monitoring |
+| Temporal generalization | Protected chronological-holdout evaluation | Tests behavior on observations later than the development period |
+| Reproducibility | Versioned configuration, run artifacts, feature contracts, tests, and clean rebuild | Demonstrates that conclusions do not depend on hidden local state |
 
-**Guards:** the subset assert in `train_xgb.py` (`feats ⊆ active`) — a run
-referencing a retired column fails loudly at load time. The inclusion
-contract builds X from registry-active feature columns only, so key,
-metadata, split, and target columns can never leak into the feature matrix.
+The authoritative metric values are the files written by the canonical run and registered in `artifacts/index.csv`. This record intentionally does not duplicate numerical values that should be read directly from generated evaluation artifacts; duplicating them manually creates an avoidable risk of drift between code, artifacts, and documentation.
 
-## 6. Validation gate and snapshots
+### Validation checks
 
-`validate.py` is the pipeline's gate, run between extraction and modeling
-(`make validate`):
+The canonical rebuild should be considered valid only when the following checks are complete:
 
-- **Schema** (pandera): key unique/non-null, timestamp typed, `target` ∈
-  {−1,1}, `split` vocabulary, 590-sensor block complete and float64
-- **Expectations**: row count, sensor count, all three split zones non-empty
-  (a wrong boundary timestamp fails loudly here, not in a model metric)
-- **Drift report**: per-column missingness vs the latest gold snapshot's
-  frozen registry — report-only; SPC owns the response
+- The model and calibration artifacts exist and resolve successfully as a compatible bundle.
+- The selected feature contract exists and batch scoring passes contract validation.
+- The protected-holdout evaluation artifacts exist for the selected run.
+- Calibration artifacts exist and the scoring path emits calibrated probabilities.
+- `make test` passes from the final source state.
+- `make hygiene` passes, confirming repository policy on generated databases and controlled data reads.
+- The Dash application loads against the rebuilt artifact state.
+- Batch replay, monitoring, and retrain-policy artifacts are generated from the canonical run family.
 
-Gold snapshots (`data/snapshots/gold/<snapshot_id>/`) freeze the exact matrix
-the model saw: `matrix.parquet` (gitignored) + `manifest.json` + frozen
-`registry.csv` (tracked). The lineage chain this closes:
+## 5. Canonical operational evidence
 
-raw-file sha256 → `ingestion_log` → registry → snapshot manifest → run
-`config.json` → `model.ubj`.
+The 2026-09-14 clean rebuild generated a canonical chain of artifacts under the selected model and calibrator:
 
-**The 30-second test:** from any run folder, answering "exactly which bytes
-trained this model?" must take under 30 seconds via snapshot_id → manifest →
-fingerprint → `ingestion_log`.
+```text
+20260914_093559_xgb_sel
+  → 20260914_093608_cal_platt
+  → batch scoring and scorecards
+  → monitoring records in artifacts/index_monitor.csv
+  → retrain-policy output in artifacts/retrain/latest_decision.json
+```
 
-## 7. Run-recorded expectations
+### Batch replay evidence
 
-Expectations travel with the run that produced them, never as constants in
-consumers. `splits.json` records `n_train`, `n_holdout`, `n_train_fails`,
-`n_holdout_fails`; `calibrate.py` asserts its reconstructed labels against
-these, and asserts artifact pairings (`len(y_cv) == oof.shape[-1]`,
-`len(y_hold) == len(p_hold)`).
+| Batch label | Purpose | Interpretation boundary |
+|---|---|---|
+| `batch_a_clean` | Nominal replay scenario | Demonstrates reference-like batch scoring and normal-state handling |
+| `batch_b_shift` | Controlled input-shift scenario | Tests feature/process-investigation routing; it does not identify a real chamber fault |
+| `batch_c_dropout` | Controlled degradation scenario | Tests adverse input/output-health conditions and persistence policy |
+| `holdout_replay` | Chronological holdout replay | Connects operational scoring to the protected evaluation partition |
 
-**Case study (2026-09-02):** a hard-coded "88 CV fails" assert, calibrated to
-the flat-file era, fired against the DB-era truth of 90. The run's own record
-settled it: 90 + 14 + 0 = 104 — the partition closes; the old quoted numbers
-never did (88 + 15 = 103). Constants in consumers go stale when decisions
-move; run-recorded expectations cannot.
+These are deterministic portfolio scenarios. They are not historical production incidents and should not be represented as evidence that a real fabrication facility experienced the named conditions.
 
-## 8. Monitoring boundary
+### Monitoring and policy evidence
 
-SPC screens all non-degenerate raw sensors, including retired ones — the
-monitoring net is deliberately wider than the modeling net. Phase-I limits
-are frozen on the CV pool (median ± 3 × 1.4826 × MAD); Phase II applies them
-unchanged to holdout + excluded tail. The alarm-rate jump is the drift
-signal.
+Monitoring evaluates two evidence streams: input-feature health against frozen reference limits and output health from calibrated-risk behavior and triage-rate persistence. The resulting verdicts route a human response:
 
-The 2026-09-01 run (pre-conversion, 257-feature frame): 457 non-degenerate
-sensors screened, 133 degenerate, median Phase-I alarm 2.53% (vs 0.27%
-nominal for normal data — the heavy-tailed baseline is measured, not
-assumed), 63 drifting. Post-migration runs screen the wide frame; refresh
-these numbers from the latest `*_spc` run when citing.
+| Verdict | Meaning | Required response |
+|---|---|---|
+| `IN_CONTROL` | No configured material feature or output-health condition is active | Continue scheduled scoring and surveillance |
+| `INVESTIGATE_CHAMBER` | Input drift is present without the configured persistent output-risk shift | Review process, measurement, and data-lineage context; do not infer a specific chamber from SECOM alone |
+| `RETRAIN_RECOMMENDED` | Persistence or combined-evidence criteria meet the retrain policy | Open governed candidate-model review; do not promote automatically |
 
-**What it catches:** protocol-layer drift (missing-rate explosions) that the
-value layer is blind to — the two instruments measure different features of
-the distribution, and both are needed.
+The canonical policy artifact records a retraining recommendation after the configured persistence condition is met across the replay evaluation window. This is validation of policy routing, not evidence that retraining improves the model or that a replacement has been approved.
 
-## 9. Repository guards
+## 6. Surrogate DOE validation boundary
 
-`make hygiene` encodes two policies as checks, run before every merge:
+The surrogate DOE workflow is evaluated as an analysis and hypothesis-generation tool, not as a causal experiment. It selects eligible raw sensor features from the model context, defines factor levels from observed Q10/Q50/Q90 support, applies factorial contrasts over an observed background frame, and evaluates the calibrated model response.
 
-- no `.db` file tracked in git (the DB is derived; `*.db` in `.gitignore`
-  plus one-time `git rm --cached`)
-- the data store has exactly one reader: only `db_ingest.py` touches the raw
-  files and only the frozen `migration_test.py` references the legacy
-  parquets — every other module goes through the DB extraction or consumes
-  run artifacts
+The workflow writes factor metadata, design matrices, surrogate predictions, effect and interaction summaries, and out-of-distribution diagnostics. OOD checks use observed-background support so that model predictions at unsupported factor combinations are visibly flagged.
+
+A DOE output may generate a testable engineering hypothesis. It cannot validate a recipe adjustment, prove a process effect, or authorize a change without a controlled physical experiment with safe ranges, randomization, blocking, and measured outcomes.
+
+## 7. Residual risks and limitations
+
+The canonical model is suitable for **reproducible portfolio demonstration** under the stated data boundary. Residual risks prevent it from being treated as a live manufacturing system:
+
+- Historical labels and missingness patterns may not represent a future production population.
+- The source data does not identify the physical process context necessary for root-cause attribution.
+- Probability calibration can deteriorate as process conditions, measurement systems, or class prevalence change.
+- A monitored feature drift may represent a process change, logging change, data-quality issue, or changing product mix.
+- An elevated risk score is an inspection-priority signal, not a confirmed defect.
+- Surrogate DOE results remain conditional on the trained model and observed data support.
+- The replay pipeline demonstrates interfaces and policy behavior; it is not a substitute for a MES/FDC-integrated operational deployment.
+
+## 8. Validation decision
+
+**Decision:** `20260914_093559_xgb_sel` with `20260914_093608_cal_platt` is accepted as the canonical model bundle for reproducible portfolio demonstration.
+
+**Decision basis:** The final run family provides a registered selected model, compatible calibration artifact, feature contract, batch-scoring outputs, scorecards, monitoring records, retrain-policy output, surrogate DOE artifacts, and curated dashboard screenshots. The repository is designed to support repeatable pipeline execution and automated tests from a clean derived-artifact state.
+
+**Not approved for:** Live fab deployment, autonomous product disposition, automated recipe/tool change, causal root-cause attribution, or automatic replacement-model promotion.
+
+**Required before any future candidate promotion:** Re-run the controlled validation protocol; compare candidate and incumbent on the protected evaluation design; assess calibration and threshold behavior; review data lineage and label maturity; update this record with a new ledger entry; and obtain explicit human approval.
+
+## Appendix A. Append-only validation ledger
+
+Do not edit a historical ledger row to make it look current. Add a new dated record when model, data, policy, or validation evidence changes materially. The machine-readable run indexes remain the detailed execution record; this table captures the human validation decision.
+
+| Date | Event type | Candidate / active bundle | Data or policy change | Evidence reviewed | Decision | Owner / reviewer | Notes |
+|---|---|---|---|---|---|---|---|
+| 2026-09-14 | Canonical clean rebuild | `20260914_093559_xgb_sel` + `20260914_093608_cal_platt` | Fresh end-to-end pipeline run; batch replay, monitoring, retrain-policy, and DOE artifacts regenerated | Run registry, model/calibration artifacts, score outputs, monitoring ledger, retrain decision, DOE artifacts, tests and hygiene checks | Accepted for reproducible portfolio demonstration | Repository maintainer | Not a production release; prior run family remains historical evidence |
+
+## Appendix B. Change-control template
+
+Add a row to the ledger and update the relevant sections above when any of the following occurs:
+
+| Change category | Examples | Minimum required review |
+|---|---|---|
+| Model change | New algorithm, hyperparameters, feature selection, or threshold policy | Candidate-versus-incumbent comparison, protected-holdout evaluation, calibration review |
+| Data change | New extraction window, missingness regime, source schema, or labels | Lineage review, schema validation, drift assessment, repeat validation as needed |
+| Calibration change | New method or recalibrated model | Reliability assessment and threshold-impact review |
+| Monitoring change | New thresholds, features, persistence rules, or verdict logic | Back-test or deterministic scenario verification and policy sign-off |
+| Retraining-policy change | New trigger or promotion rule | Governance review, test coverage, and explicit update to intended-use boundaries |
