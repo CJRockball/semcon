@@ -21,6 +21,20 @@ The Dash application is designed as a decision-support surface for a process, yi
 
 The dashboard does not create a new analytical path separate from the pipeline. It reads registered artifacts from training, calibration, scoring, SPC, forecasting, monitoring, and retraining workflows. This keeps the visual layer traceable to the same reproducible outputs used elsewhere in the repository.
 
+## Operational console
+
+The primary Dash interface consolidates batch-level risk distributions, scorecard indicators, and lot prioritization queues into an integrated engineering dashboard:
+
+![Dashboard Overview](../assets/screenshots/dash_over2.png)
+*Figure 5.1: Primary Dash operational view showing active batch selection (`batch_a_clean`), wafer risk score distributions, and triage prioritization queue.*
+
+## Calibration and failure risk analysis
+
+Accurate probability estimation is essential for reliable thresholding. The failure probability analysis panel displays empirical calibration behavior alongside the operational triage boundary:
+
+![Calibration and Failure Probability](../assets/screenshots/dash_cal_fail2.png)
+*Figure 5.2: Calibrated probability curve and failure score triage panel, verifying consistent operational mapping from raw boosted scores to actionable risk levels.*
+
 ## Decision flow
 
 ```text
@@ -36,11 +50,11 @@ A useful dashboard should make the sequence visible rather than presenting a col
 
 ## Scored-risk views
 
-The scoring layer produces calibrated probability estimates and ranking information. The dashboard should expose both the overall distribution and the practical queue of observations requiring attention. High-risk results should be shown with enough context to support a decision: score, rank, batch or lot label, timestamp where available, and the relevant model/run identifiers.
+The scoring layer produces calibrated probability estimates and ranking information. The dashboard exposes both the overall distribution and the practical queue of observations requiring attention. High-risk results are shown with enough context to support a decision: score, rank, batch or lot label, timestamp where available, and the relevant model/run identifiers.
 
 Scorecard views are especially important because they translate model output into operational language. Rather than asking a user to interpret a raw prediction file, a scorecard can summarize volume, elevated-risk counts, thresholded triage rate, distribution shift relative to a reference batch, and the highest-priority records.
 
-A threshold is an operating choice, not a universal truth. The dashboard should make clear which threshold is being applied and should avoid implying that a probability above the threshold is a confirmed defect. It is an inspection-priority signal derived from the fitted and calibrated model.
+A threshold is an operating choice, not a universal truth. The dashboard makes clear which threshold is being applied and avoids implying that a probability above the threshold is a confirmed defect. It is an inspection-priority signal derived from the fitted and calibrated model.
 
 ## Process and model-health views
 
@@ -58,15 +72,15 @@ The monitoring verdict is intentionally compact: `IN_CONTROL`, `INVESTIGATE_CHAM
 
 ## Traceability in the interface
 
-Every decision-facing display should preserve provenance. At minimum, the dashboard should show or make accessible:
+Every decision-facing display preserves provenance. The dashboard exposes, or makes accessible through registered artifacts, the active model/calibrator identifiers, batch label, monitoring timestamp, threshold context, and decision-artifact reference:
 
-- The active training run and, when relevant, calibrator run.
-- The batch or score-run label being viewed.
+- The active training run and calibrator run (e.g., `20260914_093559_xgb_sel` + `20260914_093608_cal_platt`).
+- The batch or score-run label being viewed (`batch_a_clean`, `batch_b_shift`, `batch_c_dropout`, `holdout_replay`).
 - The timestamp of the monitoring execution.
 - The configured threshold or control setting used in the displayed summary.
 - The artifact path or identifier behind a retraining recommendation.
 
-Traceability turns a dashboard from a visualization exercise into an operational interface. A user who sees an alert should be able to locate the source scorecard or monitoring artifact, reproduce the calculation, and understand whether the evidence comes from model behavior, feature behavior, or both.
+Traceability turns a dashboard from a visualization exercise into an operational interface. A user who sees an alert can locate the source scorecard or monitoring artifact, reproduce the calculation, and understand whether the evidence comes from model behavior, feature behavior, or both.
 
 ## What the dashboard does not do
 

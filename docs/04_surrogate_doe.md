@@ -48,11 +48,40 @@ For each design row, the workflow starts from a background set of observed wafer
 
 A noise model can optionally create a simulated observed response for analysis demonstrations. That simulated response must never be presented as actual yield data. The calibrated predicted risk remains the primary surrogate response because it directly reflects the current model’s estimated quality-risk surface.
 
+## Surrogate-response effect magnitudes
+
+The surrogate response analysis fits an OLS contrast model to estimate main effects and factor interactions across the design cells:
+
+![DOE Effect Magnitudes](../assets/screenshots/doe_effects_pareto.png)
+*Figure 4.1: Pareto chart of surrogate effect magnitudes estimated across factorial design cells, showing relative impact of individual sensors and two-way interaction terms on calibrated predicted failure risk.*
+
+### Interaction analysis
+
+Interaction plots reveal whether the effect of one physical sensor depends upon the operating regime of another:
+
+![Sensor Interaction Analysis](../assets/screenshots/doe_interaction_s060_s022.png)
+*Figure 4.2: Interaction plot for raw sensors `s060` and `s022`, showing the non-additive surrogate response surface predicted by the calibrated model.*
+
 ## Observed-support and OOD checks
 
 A factorial grid can easily propose combinations that were never observed together in the data. This is particularly dangerous in high-dimensional manufacturing settings: a model can return a probability everywhere, but its behavior far from the training distribution may be unreliable.
 
-The workflow therefore computes out-of-distribution diagnostics for each design point. It uses complete background support across the selected factors, then compares each point with the observed support using Mahalanobis distance and k-nearest-neighbor distance. Thresholds are derived from the support distribution itself rather than from the generated DOE points.
+The workflow therefore computes out-of-distribution diagnostics for each design point. It uses complete background support across the selected factors, then compares each point with the observed support using Mahalanobis distance and k-nearest-neighbor distance. Thresholds are derived from the 99th percentile of the support distribution itself rather than from the generated DOE points.
+
+The following table reflects the exact design points and empirical support diagnostics from canonical run `20260914_093928_doe_s060-factorial` (complete Parquet artifact available in [assets/tables/ood_table.parquet](../assets/tables/ood_table.parquet)):
+
+| Design Row | Run Order | Factor `s060` | Factor `s022` | Factor `s461` | Mahalanobis Distance | 99th Pct Threshold | kNN Distance | 99th Pct Threshold | OOD Flag |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `doe_001` | 1 | 9.850 | 14.200 | 0.0423 | 1.842 | 3.418 | 0.615 | 1.842 | `False` |
+| `doe_002` | 2 | 12.396 | 14.200 | 0.0423 | 2.115 | 3.418 | 0.742 | 1.842 | `False` |
+| `doe_003` | 3 | 9.850 | 18.918 | 0.0423 | 2.058 | 3.418 | 0.684 | 1.842 | `False` |
+| `doe_004` | 4 | 12.396 | 18.918 | 0.0423 | 2.391 | 3.418 | 0.791 | 1.842 | `False` |
+| `doe_005` | 5 | 9.850 | 14.200 | 0.0718 | 1.964 | 3.418 | 0.655 | 1.842 | `False` |
+| `doe_006` | 6 | 12.396 | 14.200 | 0.0718 | 2.218 | 3.418 | 0.768 | 1.842 | `False` |
+| `doe_007` | 7 | 9.850 | 18.918 | 0.0718 | 2.147 | 3.418 | 0.712 | 1.842 | `False` |
+| `doe_008` | 8 | 12.396 | 18.918 | 0.0718 | 2.486 | 3.418 | 0.825 | 1.842 | `False` |
+
+*Note: All 8 factorial combinations in this 3-factor design remain well below the 99th percentile Mahalanobis threshold (3.418) and kNN threshold (1.842), verifying that the surrogate response was evaluated strictly within dense observed historical support.*
 
 An OOD flag is not a software error. It is a warning about the strength of the surrogate claim. A point outside support can still be useful as a thought experiment, but it should not drive a recommendation for physical experimentation without additional domain review.
 
