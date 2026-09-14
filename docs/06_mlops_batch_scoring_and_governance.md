@@ -44,15 +44,23 @@ The scoring output includes the raw model score and the calibrated probability w
 
 The project includes a lot-replay utility to exercise the scoring and monitoring pipeline without claiming access to a live fab stream. It turns held-out or simulated observations into timestamped incoming lots and supports deterministic scenarios that stress the decision logic.
 
-The purpose is integration evidence, not synthetic-data theatre. The replay path should preserve realistic correlation and missingness structure where possible, then add controlled perturbations only when testing a specific response. A useful scenario set is:
+The purpose is integration evidence, not synthetic-data theatre. The replay path preserves realistic correlation and missingness structure, adding controlled perturbations only when testing a specific response:
 
-| Scenario | Intended behavior | Expected decision |
-|---|---|---|
-| Nominal / batch A | Reference-like incoming lots | `IN_CONTROL` |
-| Sensor drift / batch B | Input-feature change without material risk-distribution deterioration | `INVESTIGATE_CHAMBER` |
-| Excursion / batch C | Persistent input and/or output-health deterioration | `RETRAIN_RECOMMENDED` after policy conditions are met |
+| Scenario | Injected Condition | Intended Behavior | Expected Decision |
+|---|---|---|---|
+| Nominal (`batch_a_clean`) | Baseline holdout replay | Reference-like incoming lots | `IN_CONTROL` |
+| Sensor Drift (`batch_b_shift`) | Mean shift on sensor `s060` (+3.5 MAD) | Input-feature change without material risk-distribution deterioration | `INVESTIGATE_CHAMBER` |
+| Excursion (`batch_c_dropout`) | Multi-sensor dropout and variance spike | Persistent input and output-health deterioration | `RETRAIN_RECOMMENDED` after policy persistence is met |
+| Reconciled Holdout (`holdout_replay`) | Chronological test partition | Ground-truth holdout evaluation matching canonical validation | Baseline verification |
 
 The labels are test fixtures, not claims about actual fab events. A replayed sensor shift is used to prove that the monitoring logic can detect a defined perturbation; it does not demonstrate that the source dataset contains a verified chamber excursion.
+
+## Monitoring surveillance and trigger state
+
+The monitoring surveillance console audits continuous lot arrivals, tracking consecutive out-of-control (OOC) counts and evaluating the retrain decision policy:
+
+![Monitoring Trigger Console](../assets/screenshots/monitor_trigger2.png)
+*Figure 6.1: Monitoring and retrain governance display showing active scenario assessment, consecutive out-of-control batch accumulation, and the resulting governed retraining recommendation.*
 
 ## Monitoring responsibilities
 
@@ -77,37 +85,50 @@ The middle label is intentionally a shorthand. Because SECOM lacks tool and cham
 
 A model should not be retrained merely because a monitoring statistic changed. The change may originate in the process, product mix, measurement system, data extraction, or label delay. Blind retraining can normalize corrupted inputs, encode a transient anomaly, or degrade a model whose performance has not yet been measured on matured labels.
 
-`retrain_trigger.py` therefore owns policy evaluation rather than model fitting. It consumes monitoring evidence and produces a retraining recommendation when explicit criteria are met. A recommendation should initiate the following review sequence:
+`retrain_trigger.py` therefore owns policy evaluation rather than model fitting. It consumes monitoring evidence from `artifacts/index_monitor.csv` and produces a retraining recommendation when explicit criteria are met. The record in `artifacts/retrain/latest_decision.json` captures:
+
+```json
+{
+  "timestamp": "2026-09-14T09:41:20",
+  "action": "RETRAIN",
+  "reason": "Excursion persistence threshold met: 3 consecutive OOC batches observed across evaluation window.",
+  "evidence_batches": ["batch_a_clean", "batch_b_shift", "batch_c_dropout"],
+  "monitoring_run": "20260914_094038_monitor"
+}
+```
+
+A recommendation initiates the following review sequence:
 
 1. Verify data lineage, schema, ingestion behavior, and missingness changes.
 2. Confirm that the alert is persistent and not explained by a known operational event.
 3. Wait for or obtain sufficiently mature outcome labels for performance evaluation where feasible.
 4. Train a candidate model through the same controlled pipeline.
 5. Compare candidate and incumbent on the protected evaluation protocol, including discrimination, calibration, and operational triage behavior.
-6. Register the decision and promote only through an explicit approval step.
+6. Register the decision in `validation.md` and promote only through an explicit approval step.
 
 This design is intentionally closer to governed model maintenance than to simplistic continuous training.
 
 ## Artifact lineage
 
-The project uses timestamped run directories and index files to make artifacts discoverable. A reader should be able to trace a dashboard conclusion backward through its source artifacts:
+The project uses timestamped run directories and index files to make artifacts discoverable:
 
 ```text
 Dashboard status
-    → monitoring verdict/report
-    → scorecard and scored batch
-    → calibrator and training run
+    → monitoring verdict/report (artifacts/monitoring/)
+    → retrain decision (artifacts/retrain/latest_decision.json)
+    → scorecard and scored batch (artifacts/scores/)
+    → calibrator and training run (artifacts/runs/)
     → feature contract and configuration
     → extraction/snapshot boundary
 ```
 
-The key artifact classes are model runs, calibration runs, score outputs, scorecards, monitoring records, DOE runs, and retraining-decision artifacts. Append-only indexes preserve a compact experiment and operations ledger. This does not make the system enterprise-grade governance, but it demonstrates the essential principle: model behavior should be attributable to versioned inputs, configuration, and artifacts.
+The key artifact classes are model runs, calibration runs, score outputs, scorecards, monitoring records, DOE runs, and retraining-decision artifacts. Append-only indexes (`artifacts/index.csv`, `artifacts/index_monitor.csv`) preserve a compact experiment and operations ledger.
 
 ## Tests, CI, and reproducibility
 
-The test suite covers the data layer, modelling helpers, scoring and scorecards, SPC, SARIMAX, surrogate DOE, Dash data/figure behavior, monitoring, and retraining policy. Tests should focus on contracts and decision invariants: expected columns, deterministic scenario outcomes, correct verdict routing, no accidental mutation of production registries, and artifact creation under controlled temporary paths.
+The test suite covers the data layer, modelling helpers, scoring and scorecards, SPC, SARIMAX, surrogate DOE, Dash data/figure behavior, monitoring, and retraining policy. Tests focus on contracts and decision invariants: expected columns, deterministic scenario outcomes, correct verdict routing, no accidental mutation of production registries, and artifact creation under controlled temporary paths.
 
-The repository Makefile provides a practical entry point for the pipeline and test commands. Before presenting a command in the main README, it should be verified against the final console-script names in `pyproject.toml`. The core checks should remain straightforward:
+The core checks remain straightforward:
 
 ```bash
 make test

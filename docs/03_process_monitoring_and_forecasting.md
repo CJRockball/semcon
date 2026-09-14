@@ -24,6 +24,13 @@ The workflow distinguishes between two conceptual phases:
 
 The use of frozen reference limits prevents a monitoring system from normalizing away sustained drift by continually recalculating its own definition of normal. Where robust statistics are appropriate, median and median absolute deviation style calculations reduce sensitivity to isolated extreme values in sparse sensor data.
 
+## Process surveillance interface
+
+The Dash interface provides real-time visualization of individual and moving range (I-MR) charts alongside temporal feature progressions:
+
+![SPC and Process Surveillance](../assets/screenshots/dash_imr2.png)
+*Figure 3.1: Inline I-MR process surveillance chart displaying sensor time-series trajectories against Phase-I upper and lower control limits (UCL/LCL).*
+
 ## SPC signals and interpretation
 
 The SPC workflow screens eligible signals and evaluates out-of-control evidence using control boundaries and rule logic. A single point beyond a limit may be meaningful, but practical monitoring should also consider sequences, persistence, and the breadth of affected variables. The value of an alert depends on whether it is isolated, repeated, or accompanied by a change in the scored risk distribution.
