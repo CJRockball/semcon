@@ -1,190 +1,210 @@
-# Semiconductor Yield-Risk Decision Support
+# Semcon — Semiconductor Yield-Risk Decision Support
 
-A reproducible, time-aware machine-learning and process-analytics workflow built on the UCI SECOM dataset. The project converts high-dimensional, sparse manufacturing measurements into calibrated yield-risk rankings, batch scorecards, statistical monitoring, surrogate DOE evidence, and governed retraining recommendations.
+[![CI](https://github.com/CJRockball/semcon/actions/workflows/ci.yml/badge.svg)](https://github.com/CJRockball/semcon/actions/workflows/ci.yml)
+[![End-to-end smoke test](https://github.com/CJRockball/semcon/actions/workflows/e2e.yml/badge.svg)](https://github.com/CJRockball/semcon/actions/workflows/e2e.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Ruff](https://img.shields.io/badge/code%20style-Ruff-D7FF64?logo=ruff&logoColor=261230)](https://docs.astral.sh/ruff/)
+[![License](https://img.shields.io/github/license/CJRockball/semcon)](LICENSE)
+[![Latest commit](https://img.shields.io/github/last-commit/CJRockball/semcon)](https://github.com/CJRockball/semcon/commits/main)
 
-> **Scope:** This is a portfolio implementation using historical SECOM data. It is not connected to a fab MES, FDC, APC, or quality-disposition system. It does not autonomously hold lots, change recipes, diagnose a physical root cause, or deploy a replacement model.
+A reproducible semiconductor manufacturing analytics project built around the UCI SECOM dataset. Semcon turns high-dimensional, missingness-heavy sensor data into calibrated wafer-risk estimates, ranked inspection priorities, model/process-health monitoring, and governed retraining recommendations.
 
-![Dash operational overview](assets/screenshots/dash_over2.png)
+The project is deliberately framed as **decision support**. It demonstrates the analytics, validation, workflow, and software interfaces that support yield and metrology decisions; it does not autonomously change tool recipes, hold/release product, or replace engineering approval.
 
-*The Dash interface presents batch risk, inspection-priority evidence, and registered operational artifacts. It is a decision-support layer, not an autonomous manufacturing-control system.*
+## Dashboard
+
+The dashboard makes the model run, measurement-priority workflow, and monitoring state accessible to yield/process engineers without requiring them to inspect raw artifacts.
+
+![Semcon operational dashboard overview](assets/screenshots/dash_over2.png)
+
+The project also includes calibration/failure analysis, individual-and-moving-range process monitoring, DOE analysis, and monitoring-trigger views:
+
+| Calibration and failure review | I–MR process monitoring |
+|---|---|
+| ![Calibration and failure dashboard](assets/screenshots/dash_cal_fail2.png) | ![I-MR dashboard](assets/screenshots/dash_imr2.png) |
 
 ## What it does
 
-```text
-Raw SECOM files
-  → SQLite ingestion and validated extraction
-  → time-aware preprocessing and feature engineering
-  → XGBoost training, calibration, evaluation, and explanation
-  → batch scoring and inspection-priority scorecards
-  → SPC, forecasting, and model-health monitoring
-  → Dash decision-support interface
-  → governed retraining recommendation
-```
-
-The system is designed around an operational question: given constrained inspection and engineering capacity, which observations or replayed lots deserve attention, and is the available evidence consistent with routine variation, a process/data investigation, or a model-review event?
-
-## Highlights
-
-| Capability | Implementation | Operational value |
+| Operational question | Semcon component | Output |
 |---|---|---|
-| Governed data layer | SQLite ingestion, SQL extraction, column registry, snapshots | Separates raw, derived, and model-facing data; preserves lineage |
-| Time-aware validation | Development period plus protected chronological holdout | Tests on later observations rather than relying on an unrestricted random split |
-| Calibrated risk model | XGBoost, registered feature contract, Platt calibration | Supports probability-based inspection triage rather than raw score ranking alone |
-| Batch scoring | Contract validation, score outputs, scorecards, replay scenarios | Converts a model run into a repeatable inspection-priority workflow |
-| Process surveillance | SPC, SARIMAX, feature drift, output-health checks | Separates process/data investigation from routine scoring |
-| Surrogate DOE | Raw-sensor factors, observed-support levels, OOD diagnostics | Produces bounded engineering hypotheses without claiming causal process effects |
-| Model governance | Monitoring verdicts, retraining policy, artifact registry | Makes retraining a reviewable decision rather than an automatic overwrite |
-| Decision interface | Dash and Plotly artifact-driven views | Presents risk, monitoring, and provenance for human review |
+| Is incoming manufacturing data structurally valid? | Ingestion, schema checks, SQLite snapshots | Validated data contract and reproducible snapshot |
+| Which wafers merit additional measurement? | Calibrated XGBoost scoring | Per-wafer probability and inspection-priority flag |
+| Which lots should be reviewed first? | Scorecard aggregation | Ranked lot and wafer worklist |
+| Is the process/model behavior still healthy? | SPC, SARIMAX, and monitoring | `IN_CONTROL`, `INVESTIGATE_CHAMBER`, or `RETRAIN_RECOMMENDED` |
+| Is retraining justified? | Retrain policy | Documented retrain recommendation rather than automatic replacement |
+| What experiments should be run next? | DOE design, simulation, and analysis | Auditable screening/response-surface workflow |
 
-## Repository layout
+## System flow
 
 ```text
-.
-├── src/semcon/       # Pipeline, models, scoring, monitoring, dashboard, DOE
-├── tests/            # Unit and integration-style contract tests
-├── docs/             # Technical documentation by lifecycle stage
-├── assets/           # Curated documentation screenshots
-├── notebooks/        # Exploratory analysis notebooks
-├── config/           # Versioned runtime configuration
-├── data/             # Local source, SQLite, snapshots; raw data is not tracked
-├── artifacts/        # Registered derived runs and decision artifacts
-├── validation.md     # Controlled validation record and append-only decision ledger
-└── Makefile          # Reproducible pipeline and hygiene commands
+Raw SECOM data
+   │
+   ▼
+Ingest → validate → versioned SQLite snapshot
+   │
+   ▼
+Leakage-controlled training → calibration → evaluation → run registry
+   │
+   ▼
+New/replayed lot features → semcon-score → calibrated wafer-risk scores
+   │                                           │
+   ▼                                           ▼
+semcon-scorecard → ranked inspection worklist  semcon-monitor → health verdict
+                                                     │
+                                                     ▼
+                                           semcon-retrain → policy recommendation
+                                                     │
+                                                     ▼
+                                              Dash operational dashboard
 ```
 
-The Python package separates responsibilities rather than hiding the workflow in one notebook. Ingestion, extraction, feature engineering, training, calibration, scoring, SPC, forecasting, DOE, monitoring, retraining policy, Dash presentation, and artifact tracking are explicit modules under `src/semcon/`.
+The scoring workflow is batch-oriented rather than an always-on prediction API: a scheduled job can invoke `semcon-score` when a lot is ready, write score artifacts, and exit. `semcon-scorecard` then turns those scores into a measurement-priority worklist. Dash is a separate, long-running visualization and audit service.
+
+## Results and validation
+
+The pipeline emphasizes imbalanced-class evaluation and decision quality rather than reporting accuracy alone. The repository records baseline-versus-selected model comparison, holdout evaluation, probability calibration, threshold selection, and explainability artifacts in the run registry and validation documentation.
+
+- Start with [validation.md](validation.md) for split discipline, leakage controls, metrics, calibration, and limitations.
+- `artifacts/index.csv` is the model-run ledger.
+- `artifacts/runs/<run_id>/` holds immutable run-specific metrics, figures, models, and metadata.
+- PR-AUC is prioritized because the defective outcome is rare; ROC-AUC is reported as a secondary discrimination measure.
 
 ## Quick start
 
-### 1. Install
+### Local development
 
-This repository uses [uv](https://docs.astral.sh/uv/) for dependency and environment management.
+Requirements: Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/CJRockball/semcon.git
 cd semcon
-uv sync
+uv sync --frozen
 ```
 
-### 2. Obtain data
-
-Download the SECOM source data from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/179/secom) and place the required files in the local location expected by the ingestion command. Raw source data and the generated SQLite database are deliberately excluded from Git.
-
-See [`data/README.md`](data/README.md) for the data contract, source files, database layout, split policy, lineage, and regeneration details.
-
-### 3. Verify the repository
+Run the quality suite:
 
 ```bash
-make test
-make hygiene
+uv run pytest
+uv run ruff check .
 ```
 
-`make test` runs the repository test suite. `make hygiene` enforces repository policy: generated databases are not tracked, and direct data reads remain contained to the intended data-layer boundary.
+The default CI workflow runs linting, the Python test suite, and a small CLI smoke check. A separate end-to-end workflow is available on demand because it downloads the dataset and exercises the full data-dependent path. The smoke-test additions and Docker dashboard deployment were merged on 15 September 2026. [github_mcp_direct]
 
-### 4. Rebuild the core pipeline
+### Typical local workflow
+
+Use the project CLI help for the current argument contract:
 
 ```bash
-make clean
-make
+uv run semcon-ingest --help
+uv run semcon-train --help
+uv run semcon-score --help
+uv run semcon-scorecard --help
+uv run semcon-monitor --help
+uv run semcon-retrain --help
+uv run semcon-dash --help
 ```
 
-`make clean` removes derived databases, snapshots, artifacts, logs, replay data, and caches while preserving raw source data and the local environment. `make` rebuilds the core path: ingestion, extraction, exploration, feature engineering, baseline and selected-feature training, calibration, SPC, and SARIMAX.
-
-### 5. Exercise batch scoring
+A representative sequence is:
 
 ```bash
-make demo
+# 1. Acquire/ingest the dataset and create a validated local snapshot.
+uv run semcon-ingest
+
+# 2. Train and register a model run.
+uv run semcon-train
+
+# 3. Score an incoming or replayed lot, then produce priorities.
+uv run semcon-score
+uv run semcon-scorecard
+
+# 4. Evaluate monitoring and retrain policy on accumulated artifacts.
+uv run semcon-monitor
+uv run semcon-retrain
+
+# 5. Start the local dashboard.
+uv run semcon-dash
 ```
 
-The demonstration path creates deterministic incoming-lot scenarios, scores the batches, runs a reconciled chronological-holdout replay, and creates scorecards. These are integration-test fixtures and portfolio evidence—not a live manufacturing data feed.
+## Dashboard Docker deployment
 
-## Documentation
+The root `Dockerfile` packages the pinned `uv.lock` environment, source, SQL, documentation assets, and committed run artifacts. Its default command launches **only the Dash dashboard** on port 8050; it does not start scoring, scorecard generation, or retraining jobs. The repository also includes a `.dockerignore` to keep local environments, Git metadata, and build/test caches out of the image build context. [github_mcp_direct]
 
-The technical documentation follows the data-to-decision lifecycle. Read it in sequence for the complete architecture, or jump directly to the area relevant to your review.
+Build and run the dashboard from the repository root:
 
-| Guide | Focus |
-|---|---|
-| [Data and preprocessing](docs/01_data_and_preprocessing.md) | Dataset structure, time boundary, missingness clusters, feature policy, and leakage controls |
-| [Modelling and results](docs/02_modelling_and_results.md) | Decision objective, model contract, temporal validation, calibration, and result interpretation |
-| [Process monitoring and forecasting](docs/03_process_monitoring_and_forecasting.md) | Phase-I/Phase-II SPC, alert interpretation, and SARIMAX forecasting |
-| [Surrogate DOE](docs/04_surrogate_doe.md) | Factor eligibility, observed-support levels, OOD checks, interaction analysis, and causal limits |
-| [Dashboard and decision support](docs/05_dashboard_and_decision_support.md) | Dash interface, scorecards, operational questions, and traceability |
-| [Batch scoring and retraining governance](docs/06_mlops_batch_scoring_and_governance.md) | Batch contract, scenario replay, monitoring states, artifact lineage, retraining policy, tests, and CI |
-| [Data contract](data/README.md) | Source layout, database schema, registry rules, snapshots, and local regeneration |
-| [Validation record](validation.md) | Canonical model evidence, validation decision, residual risks, and append-only ledger |
+```bash
+docker build -t semcon:latest .
+docker run --rm -p 8050:8050 --name semcon-dash semcon:latest
+```
 
-## Operational workflow
+Then browse to [http://localhost:8050](http://localhost:8050).
 
-Prediction, monitoring, and retraining are deliberately separated because they answer different questions.
+For a real batch-oriented deployment, use the same image as a short-lived scheduled workload, with host storage mounted for incoming data and output artifacts. Do **not** combine this with the Dash container unless there is a deliberate orchestration reason to do so:
+
+```bash
+# Illustrative only: use `semcon-score --help` for the repository's current flags.
+docker run --rm \
+  -v "$(pwd)/artifacts:/app/artifacts" \
+  semcon:latest \
+  uv run semcon-score --help
+```
+
+A scheduler such as cron, Airflow, or a Kubernetes CronJob should invoke the scoring workload only after an input lot has been validated and made available atomically. It should then invoke scorecard generation after successful scoring. An idempotency rule—processed-file archive, database status, or immutable lot identifier—is necessary to avoid repeatedly scoring the same lot.
+
+## Monitoring and governance
+
+`semcon-monitor` uses the scored stream and frozen reference boundaries to emit an operational state:
+
+| Verdict | Meaning | Human response |
+|---|---|---|
+| `IN_CONTROL` | No material output-risk or key-feature drift alarm | Continue normal surveillance |
+| `INVESTIGATE_CHAMBER` | Feature/process shift without a corresponding sustained risk shift | Review equipment, recipe, and metrology context |
+| `RETRAIN_RECOMMENDED` | Persistent model-output degradation and/or policy conditions | Validate data lineage and holdout performance before approving a new model |
+
+`semcon-retrain` is intentionally downstream of monitoring. It converts accumulated evidence into a governed recommendation; it does not silently overwrite the active model. That separation makes decisions auditable and prevents a transient signal from directly changing production analytics.
+
+![Monitoring trigger view](assets/screenshots/monitor_trigger2.png)
+
+## Repository map
 
 ```text
-Incoming or replayed batch
-  → schema and feature-contract validation
-  → calibrated risk scoring
-  → scorecard and inspection-priority ranking
-  → feature-drift and output-health monitoring
-  → retraining-policy evaluation
+src/semcon/
+├── db.py, db_ingest.py, extract.py, schema.py, snapshots.py, validate.py
+│   └── data acquisition, validation, SQLite snapshots, and data contracts
+├── train_xgb.py, selection.py, calibrate.py, evaluation.py, explain.py
+│   └── training, selection, calibration, validation, and explainability
+├── simulate_lots.py, score.py, scorecard.py
+│   └── replayed/incoming batch handling, scoring, and inspection prioritization
+├── spc.py, sarimax.py, monitor.py, retrain_trigger.py
+│   └── process/model surveillance and retrain policy
+├── doe_design.py, doe_run.py, doe_analyze.py
+│   └── experimental design, response simulation, and analysis
+└── dash_app.py, dash_data.py, dash_figs.py
+    └── Dash/Plotly operational visualization
 
-IN_CONTROL
-  → continue normal scoring and surveillance
-
-INVESTIGATE_CHAMBER
-  → review measurement/process context and data lineage
-
-RETRAIN_RECOMMENDED
-  → start governed candidate-model review; do not automatically deploy a replacement
+tests/                  pytest suite
+docs/                   design and analysis documentation
+assets/                 README/dashboard visual assets
+artifacts/              committed run registry and demo outputs
+.github/workflows/      CI and manually triggered end-to-end workflows
 ```
 
-The `INVESTIGATE_CHAMBER` label is an operational routing shorthand, not a claim that the system has identified a physical chamber fault. SECOM does not provide chamber, tool, recipe, maintenance, or genealogy metadata required for that attribution.
+## Data and limitations
 
-## Canonical portfolio run
+SECOM is a public benchmark dataset, not a complete fab data model. It lacks true lot genealogy, chamber/tool identifiers, recipes, maintenance history, wafer maps, causal interventions, and real metrology/MES integrations. Accordingly:
 
-The final clean-rebuild model bundle is documented in [`validation.md`](validation.md):
+- Lot replay and injected drift scenarios demonstrate streaming interfaces and monitoring behavior; they are not claims of a live factory deployment.
+- DOE modules provide an explicit experimental-analysis workflow, but synthetic response components are labeled as such and must not be interpreted as observed fab experiments.
+- Risk scores are inspection-prioritization inputs, not autonomous disposition, recipe-control, or safety decisions.
+- Any production implementation would require validated data lineage, access control, model approval/versioning, integration testing against MES/FDC/metrology systems, and engineering sign-off.
 
-| Artifact | Canonical identifier |
-|---|---|
-| Selected model | `20260914_093559_xgb_sel` |
-| Bound calibrator | `20260914_093608_cal_platt` |
-| Status | Accepted for reproducible portfolio demonstration |
+## Further documentation
 
-The validation record is intentionally stricter than a README summary. It states intended use, data boundaries, validation protocol, operational evidence, residual risks, and the required review before any future candidate model can be promoted.
+- [Validation and modeling protocol](validation.md)
+- [DOE workflow](docs/doe.md)
+- [Data setup and acquisition](data/README.md)
+- [GitHub Actions CI workflow](.github/workflows/ci.yml)
+- [Manually triggered end-to-end workflow](.github/workflows/e2e.yml)
 
-## Evidence and artifacts
+## License
 
-Generated runs are registered under `artifacts/`. The repository keeps a distinction between machine-generated evidence and curated presentation assets:
-
-| Location | Purpose |
-|---|---|
-| `artifacts/runs/` | Training, calibration, SPC, forecasting, and validation outputs |
-| `artifacts/scores/` | Batch scoring and scorecard outputs |
-| `artifacts/monitoring/` and `artifacts/index_monitor.csv` | Monitoring reports and append-only surveillance ledger |
-| `artifacts/retrain/` | Governed retraining-policy outputs |
-| `artifacts/doe/` | Design matrices, surrogate predictions, OOD diagnostics, effects, and interaction artifacts |
-| `assets/screenshots/` | Curated stable images used in README and technical documentation |
-
-A displayed score, monitoring decision, or DOE result should be traceable through the registered artifact chain:
-
-```text
-Dashboard or decision artifact
-  → monitoring report or scorecard
-  → scored batch
-  → calibration and training run
-  → feature contract and configuration
-  → extraction and snapshot boundary
-```
-
-## Boundaries and limitations
-
-The project is explicit about the difference between a rigorous portfolio workflow and a live manufacturing system.
-
-- **Predictive association is not causal process knowledge.** Model importance and SHAP attribution identify signals relevant to the fitted model; they do not prove a root cause.
-- **Surrogate DOE is not a physical DOE.** Factor contrasts use observed support and model predictions. Any recipe change requires controlled physical confirmation within approved operating ranges.
-- **Monitoring is not autonomous control.** Alerts route a human investigation and do not release, hold, or alter product or equipment.
-- **A retraining recommendation is not deployment.** Data lineage, label maturity, validation, calibration, incumbent comparison, and explicit approval are required before promotion.
-- **SECOM is not a complete fab data model.** It lacks chamber/tool identity, recipe, product/layer context, lot genealogy, maintenance events, wafer maps, and physical sensor units.
-
-These constraints determine the design. The objective is to demonstrate a technically defensible analytics lifecycle for wide, sparse, imbalanced, time-dependent manufacturing data while avoiding claims the evidence cannot support.
-
-## License and attribution
-
-Code in this repository is released under the MIT License. The SECOM dataset is external to the repository and remains subject to the terms and attribution requirements of its original source.
+See [LICENSE](LICENSE).
