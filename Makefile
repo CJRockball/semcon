@@ -141,7 +141,7 @@ monitor:
 
 trigger:
 	@echo "==> evaluating drift-to-retrain policy from index_monitor.csv"
-	$(TRIGGER)
+	-$(TRIGGER)
 
 # Surrogate DOE chain. Design/run/analyze stages stay separate on disk; this
 # target just wires them through the latest_design / latest_run pointers.
