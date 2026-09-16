@@ -7,13 +7,13 @@
 [![License](https://img.shields.io/github/license/CJRockball/semcon)](LICENSE)
 [![Latest commit](https://img.shields.io/github/last-commit/CJRockball/semcon)](https://github.com/CJRockball/semcon/commits/main)
 
-A reproducible semiconductor manufacturing analytics project built around the UCI SECOM dataset. Semcon turns high-dimensional, missingness-heavy sensor data into calibrated wafer-risk estimates, ranked inspection priorities, model/process-health monitoring, and governed retraining recommendations.
+A reproducible semiconductor-manufacturing analytics project built around the UCI SECOM dataset. Semcon converts high-dimensional, missingness-heavy sensor data into calibrated wafer-risk estimates, ranked inspection priorities, process/model-health monitoring, and governed retraining recommendations.
 
-The project is deliberately framed as **decision support**. It demonstrates the analytics, validation, workflow, and software interfaces that support yield and metrology decisions; it does not autonomously change tool recipes, hold/release product, or replace engineering approval.
+Semcon is deliberately framed as **decision support**. It demonstrates the analytics, validation, workflow, and software interfaces that support yield and metrology decisions; it does not autonomously change tool recipes, hold or release product, or replace engineering approval.
 
 ## Dashboard
 
-The dashboard makes the model run, measurement-priority workflow, and monitoring state accessible to yield/process engineers without requiring them to inspect raw artifacts.
+The Dash/Plotly application makes the model run, measurement-priority workflow, and monitoring state accessible to yield and process engineers without requiring them to inspect raw artifacts.
 
 ![Semcon operational dashboard overview](assets/screenshots/dash_over2.png)
 
@@ -30,9 +30,9 @@ The project also includes calibration/failure analysis, individual-and-moving-ra
 | Is incoming manufacturing data structurally valid? | Ingestion, schema checks, SQLite snapshots | Validated data contract and reproducible snapshot |
 | Which wafers merit additional measurement? | Calibrated XGBoost scoring | Per-wafer probability and inspection-priority flag |
 | Which lots should be reviewed first? | Scorecard aggregation | Ranked lot and wafer worklist |
-| Is the process/model behavior still healthy? | SPC, SARIMAX, and monitoring | `IN_CONTROL`, `INVESTIGATE_CHAMBER`, or `RETRAIN_RECOMMENDED` |
-| Is retraining justified? | Retrain policy | Documented retrain recommendation rather than automatic replacement |
-| What experiments should be run next? | DOE design, simulation, and analysis | Auditable screening/response-surface workflow |
+| Is process/model behavior still healthy? | SPC, SARIMAX, and monitoring | `IN_CONTROL`, `INVESTIGATE_CHAMBER`, or `RETRAIN_RECOMMENDED` |
+| Is retraining justified? | Retrain policy | Governed recommendation rather than automatic model replacement |
+| What experiments should be run next? | DOE design, simulation, and analysis | Auditable screening and response-surface workflow |
 
 ## System flow
 
@@ -40,7 +40,7 @@ The project also includes calibration/failure analysis, individual-and-moving-ra
 Raw SECOM data
    │
    ▼
-Ingest → validate → versioned SQLite snapshot
+Ingest → profile → feature engineering → validated SQLite snapshot
    │
    ▼
 Leakage-controlled training → calibration → evaluation → run registry
@@ -62,7 +62,7 @@ The scoring workflow is batch-oriented rather than an always-on prediction API: 
 
 ## Results and validation
 
-The pipeline emphasizes imbalanced-class evaluation and decision quality rather than reporting accuracy alone. The repository records baseline-versus-selected model comparison, holdout evaluation, probability calibration, threshold selection, and explainability artifacts in the run registry and validation documentation.
+The pipeline emphasizes imbalanced-class evaluation and decision quality rather than accuracy alone. The repository records baseline-versus-selected model comparison, holdout evaluation, probability calibration, threshold selection, and explainability artifacts in the run registry and validation documentation.
 
 - Start with [validation.md](validation.md) for split discipline, leakage controls, metrics, calibration, and limitations.
 - `artifacts/index.csv` is the model-run ledger.
@@ -71,9 +71,9 @@ The pipeline emphasizes imbalanced-class evaluation and decision quality rather 
 
 ## Quick start
 
-### Local development
+### Requirements
 
-Requirements: Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+Install Python 3.11+ and [uv](https://docs.astral.sh/uv/). The project uses `uv.lock` to reproduce the pinned dependency environment. `uv sync --frozen` creates a local `.venv` in the cloned repository; the clone itself does not include or activate a virtual environment.
 
 ```bash
 git clone https://github.com/CJRockball/semcon.git
@@ -81,21 +81,74 @@ cd semcon
 uv sync --frozen
 ```
 
-Run the quality suite:
+Open the cloned `semcon` directory itself as the VS Code workspace. VS Code usually detects `.venv` after `uv sync`; otherwise select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows.
+
+### Minimum data-enabled verification
+
+The original SECOM source data are not versioned in this repository. Download the required source files into `data/raw/` following [data/README.md](data/README.md), then build the local data layer and run the full suite:
 
 ```bash
+# Create the local raw SQLite layer.
+uv run semcon-ingest
+
+# Apply data-quality profiling and materialize eligible base features.
+uv run semcon-explore
+
+# Add derived missingness features to the analytic matrix.
+uv run semcon-feature-eng
+
+# Verify the full repository, including local data-contract tests.
 uv run pytest
+```
+
+The original SECOM input has 590 measurement columns. Profiling retains 257 usable base features; feature engineering adds four derived missingness features, producing the 261-feature analytic matrix protected by the local data-contract test.
+
+Run linting separately:
+
+```bash
 uv run ruff check .
 ```
 
-The default CI workflow runs linting, the Python test suite, and a small CLI smoke check. A separate end-to-end workflow is available on demand because it downloads the dataset and exercises the full data-dependent path. The smoke-test additions and Docker dashboard deployment were merged on 15 September 2026. [github_mcp_direct]
+The default CI workflow runs linting, the Python test suite, and a small CLI smoke check. A separate end-to-end workflow is manually triggered because it downloads the dataset and exercises the full data-dependent path.
+
+### Full portfolio demonstration
+
+After placing the original SECOM source files in `data/raw/`, rebuild the complete data, modeling, monitoring, scoring, governance, and DOE demonstration with:
+
+```bash
+make full
+```
+
+`make full` is the aggregate clean-rebuild target. It performs the equivalent of:
+
+```bash
+make clean
+make
+make demo
+make trigger
+make doe
+```
+
+The targets are deliberately separated so individual components can also be reproduced or debugged independently:
+
+| Target | Purpose |
+|---|---|
+| `make clean` | Removes locally generated database, snapshots, caches, and runtime artifacts before a clean rebuild |
+| `make` | Builds the core data, feature, model, calibration, evaluation, SPC, and SARIMAX workflow |
+| `make demo` | Replays/scores incoming lots and produces ranked measurement priorities plus monitoring evidence |
+| `make trigger` | Applies the governed retrain policy to accumulated monitoring history |
+| `make doe` | Produces the DOE design and analysis demonstration |
+
+`make full` regenerates pipeline-owned derived artifacts. It does not recreate the original raw SECOM inputs in `data/raw/`, manually curated documentation, Git-tracked static assets, or Docker images.
 
 ### Typical local workflow
 
-Use the project CLI help for the current argument contract:
+Use project CLI help for the current argument contract:
 
 ```bash
 uv run semcon-ingest --help
+uv run semcon-explore --help
+uv run semcon-feature-eng --help
 uv run semcon-train --help
 uv run semcon-score --help
 uv run semcon-scorecard --help
@@ -104,30 +157,24 @@ uv run semcon-retrain --help
 uv run semcon-dash --help
 ```
 
-A representative sequence is:
+A representative operations sequence after a trained model exists is:
 
 ```bash
-# 1. Acquire/ingest the dataset and create a validated local snapshot.
-uv run semcon-ingest
-
-# 2. Train and register a model run.
-uv run semcon-train
-
-# 3. Score an incoming or replayed lot, then produce priorities.
+# Score an incoming or replayed lot, then produce measurement priorities.
 uv run semcon-score
 uv run semcon-scorecard
 
-# 4. Evaluate monitoring and retrain policy on accumulated artifacts.
+# Evaluate monitoring and retrain policy on accumulated artifacts.
 uv run semcon-monitor
 uv run semcon-retrain
 
-# 5. Start the local dashboard.
+# Start the local dashboard.
 uv run semcon-dash
 ```
 
 ## Dashboard Docker deployment
 
-The root `Dockerfile` packages the pinned `uv.lock` environment, source, SQL, documentation assets, and committed run artifacts. Its default command launches **only the Dash dashboard** on port 8050; it does not start scoring, scorecard generation, or retraining jobs. The repository also includes a `.dockerignore` to keep local environments, Git metadata, and build/test caches out of the image build context. [github_mcp_direct]
+The root `Dockerfile` packages the pinned `uv.lock` environment, source, SQL, documentation assets, and committed run artifacts. Its default command launches **only the Dash dashboard** on port 8050; it does not start scoring, scorecard generation, or retraining jobs. The `.dockerignore` excludes local environments, Git metadata, raw input data, and build/test caches from the image build context.
 
 Build and run the dashboard from the repository root:
 
@@ -138,17 +185,17 @@ docker run --rm -p 8050:8050 --name semcon-dash semcon:latest
 
 Then browse to [http://localhost:8050](http://localhost:8050).
 
-For a real batch-oriented deployment, use the same image as a short-lived scheduled workload, with host storage mounted for incoming data and output artifacts. Do **not** combine this with the Dash container unless there is a deliberate orchestration reason to do so:
+For a batch-oriented deployment, use the same image as a short-lived scheduled workload and mount host storage for incoming data and output artifacts. Do not combine the batch job with the Dash container unless there is a deliberate orchestration reason to do so:
 
 ```bash
-# Illustrative only: use `semcon-score --help` for the repository's current flags.
+# Illustrative only: inspect the installed CLI for current scoring flags.
 docker run --rm \
   -v "$(pwd)/artifacts:/app/artifacts" \
   semcon:latest \
   uv run semcon-score --help
 ```
 
-A scheduler such as cron, Airflow, or a Kubernetes CronJob should invoke the scoring workload only after an input lot has been validated and made available atomically. It should then invoke scorecard generation after successful scoring. An idempotency rule—processed-file archive, database status, or immutable lot identifier—is necessary to avoid repeatedly scoring the same lot.
+A scheduler such as cron, Airflow, or a Kubernetes CronJob should invoke scoring only after an input lot has been validated and made available atomically. It should invoke scorecard generation after successful scoring. A processed-file archive, database status, or immutable lot identifier is needed to avoid repeatedly scoring the same lot.
 
 ## Monitoring and governance
 
@@ -160,7 +207,7 @@ A scheduler such as cron, Airflow, or a Kubernetes CronJob should invoke the sco
 | `INVESTIGATE_CHAMBER` | Feature/process shift without a corresponding sustained risk shift | Review equipment, recipe, and metrology context |
 | `RETRAIN_RECOMMENDED` | Persistent model-output degradation and/or policy conditions | Validate data lineage and holdout performance before approving a new model |
 
-`semcon-retrain` is intentionally downstream of monitoring. It converts accumulated evidence into a governed recommendation; it does not silently overwrite the active model. That separation makes decisions auditable and prevents a transient signal from directly changing production analytics.
+`semcon-retrain` is intentionally downstream of monitoring. It converts accumulated evidence into a governed recommendation; it does not silently overwrite the active model. This separation makes decisions auditable and prevents a transient signal from directly changing production analytics.
 
 ![Monitoring trigger view](assets/screenshots/monitor_trigger2.png)
 
@@ -170,6 +217,8 @@ A scheduler such as cron, Airflow, or a Kubernetes CronJob should invoke the sco
 src/semcon/
 ├── db.py, db_ingest.py, extract.py, schema.py, snapshots.py, validate.py
 │   └── data acquisition, validation, SQLite snapshots, and data contracts
+├── explore.py, feature_eng.py
+│   └── profiling, feature eligibility, and derived analytic features
 ├── train_xgb.py, selection.py, calibrate.py, evaluation.py, explain.py
 │   └── training, selection, calibration, validation, and explainability
 ├── simulate_lots.py, score.py, scorecard.py
