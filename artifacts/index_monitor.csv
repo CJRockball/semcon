@@ -1,5 +1,4 @@
 run_id,type,limits,note,n_screened,median_ooc_p1,max_delta,n_drift,data,snapshot_id,window,seasonal_winner,failfrac_order,exog_winner,exog_coef,exog_p,ro_winner,ro_mase,holdout_mase,holdout_coverage,s468_breach_share,parent_run,score_dir,verdict,triage_rate,mean_risk,drift_fraction,n_drifted
-20260914_093350_spc,spc,robust,,590.0,0.0253,0.5348,63.0,f2b103e67299491f,20260914_013350_772ee59c,,,,,,,,,,,,,,,,,,
-20260914_093359_sarimax,sarimax,,,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,0.0,,,,,,,
-20260914_093633_monitor_in_control,monitoring,,,,,,,,,,,,,,,,,,,,20260914_093513_xgb_sel,20260914_093620_score__holdout_replay,IN_CONTROL,0.013,0.0303,0.0,0.0
-20260914_093658_monitor_in_control,monitoring,,,,,,,,,,,,,,,,,,,,20260914_093513_xgb_sel,20260914_093620_score__holdout_replay,IN_CONTROL,0.013,0.0303,0.0,0.0
+20260916_152833_spc,spc,robust,,590.0,0.0253,0.5348,63.0,f2b103e67299491f,20260916_072833_772ee59c,,,,,,,,,,,,,,,,,,
+20260916_152842_sarimax,sarimax,,,,,,,,,50.0,ar1,"(0, 1, 1)",(none),-4.0859,0.1047,arima,0.507,1.463,1.0,0.0,,,,,,,
+20260916_153019_monitor_in_control,monitoring,,,,,,,,,,,,,,,,,,,,20260916_152859_xgb_sel,20260916_153004_score__holdout_replay,IN_CONTROL,0.013,0.0303,0.0,0.0

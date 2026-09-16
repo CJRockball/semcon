@@ -62,7 +62,7 @@ SEL_RUN  := xgb_sel
 
 .PHONY: all ingest extract explore features train train-base train-sel \
         calibrate spc sarimax doe test hygiene clean demo dash monitor \
-		trigger
+		trigger full
 
 all: calibrate spc sarimax
 	@echo "==> pipeline complete - ledger: artifacts/index.csv"
@@ -170,6 +170,12 @@ hygiene:
 		| grep -v -e db_ingest \
 		&& { echo "FAIL: direct raw-data read outside db_ingest"; exit 1; } \
 		|| echo "ok: no direct raw-data reads outside db_ingest"
+
+full: clean
+	$(MAKE)
+	$(MAKE) demo
+	$(MAKE) trigger
+	$(MAKE) doe
 
 clean:
 	@echo "==> removing derived database, snapshots, artifacts, logs, and Python caches"
